@@ -17,11 +17,17 @@
   button { margin-top:15px; padding:10px 16px; border:none; border-radius:8px; cursor:pointer; background:#2b9cff; color:white; }
   button:hover { background:#1a8be0; }
   button.secondary { background: #2a3a4d; }
+  /* Estilos para botões de compartilhamento */
+  button.share-btn { margin-top: 5px; } 
+  button.share-pdf { background: #10b981; } /* Verde para PDF */
+  button.share-pdf:hover { background: #059669; }
+  button.share-excel { background: #eab308; } /* Amarelo para Excel */
+  button.share-excel:hover { background: #d99905; }
+  
   .muted { color:#98a3b3; font-size:13px; }
   table { width:100%; border-collapse:collapse; margin-top:10px; }
   th, td { padding:10px; border-bottom:1px solid #2a3a4d; text-align:left; }
   th { background:#1c2b38; }
-  /* Estilo para o checkbox */
   input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
   .top-actions { display:flex; gap:8px; align-items:center; margin-bottom:6px; flex-wrap: wrap; }
 </style>
@@ -77,13 +83,15 @@
   <div class="card">
     <div class="top-actions">
       <div style="flex:1"><h2 style="margin:0">Inventário</h2></div>
-      <div style="display:flex;gap:8px">
-        <button onclick="exportPDF()">Exportar PDF</button>
-        <button onclick="exportExcel()">Exportar Excel</button>
+      <div style="display:flex;gap:8px; flex-wrap:wrap;">
+        <button onclick="shareFile('pdf')" class="share-btn share-pdf">📧 Compartilhar PDF</button>
+        <button onclick="shareFile('excel')" class="share-btn share-excel">📧 Compartilhar Excel</button>
+        <button onclick="exportPDF()">Baixar PDF</button>
+        <button onclick="exportExcel()">Baixar Excel</button>
         <button onclick="deleteSelected()" style="background:#d93025;">Excluir</button>
       </div>
     </div>
-    <p class="muted">Selecione os itens na tabela para exportar ou excluir.</p>
+    <p class="muted">Selecione os itens na tabela para enviar, baixar ou excluir.</p>
     <table>
       <thead>
         <tr>
@@ -106,8 +114,7 @@
 </div>
 
 <script>
-// --- BANCO DE DADOS DA TABELA DE IMAGEM ---
-// Mapeamento: Chave = Nome, Valor = { valor_mo: $/OM Normal, horas: Tempo em Hrs }
+// --- BANCO DE DADOS E LÓGICA ---
 const tabelaPrecos = {
   "ACABADORA DE SUPERF": { valor: 2.00, horas: 5 },
   "BALANCIM CADEIRINHA": { valor: 2.00, horas: 2.25 },
@@ -145,14 +152,11 @@ const tabelaPrecos = {
   "MAQUINA PESADA": { valor: 34.00, horas: 16 }
 };
 
-// Dados Iniciais (Simulando LocalStorage se vazio)
 let inventoryData = JSON.parse(localStorage.getItem('oficina_inventory')) || [];
 
-// Preenche o DataList com as chaves do objeto tabelaPrecos
 function populateOptions(){
     const datalist = document.getElementById('equipamentosList');
     datalist.innerHTML = '';
-    // Ordena alfabeticamente para facilitar a busca
     Object.keys(tabelaPrecos).sort().forEach(item => {
         let option = document.createElement('option');
         option.value = item;
@@ -160,18 +164,13 @@ function populateOptions(){
     });
 }
 
-// Lógica de Preenchimento Automático
 function autofill() {
     const nomeInput = document.getElementById('nome').value.toUpperCase().trim();
     const dados = tabelaPrecos[nomeInput];
-
     if (dados) {
-        // Se encontrou o nome exato na lista
         document.getElementById('valor').value = dados.valor;
         document.getElementById('horas').value = dados.horas;
     } else {
-        // Tentativa de busca parcial (caso o usuário digite "Betoneira" e existam várias)
-        // Isso é opcional, mas ajuda se o usuário não selecionar da lista
         const match = Object.keys(tabelaPrecos).find(key => key.includes(nomeInput));
         if(match && nomeInput.length > 3) {
              document.getElementById('valor').value = tabelaPrecos[match].valor;
@@ -180,31 +179,25 @@ function autofill() {
     }
 }
 
-// Salva e Recarrega a Tabela
 function addItem(){
     const item = {
         om: document.getElementById('om').value,
         patrimonio: document.getElementById('patrimonio').value,
         nome: document.getElementById('nome').value,
-        preco: document.getElementById('preco').value, // Preço do Ativo (Manual)
-        horas: document.getElementById('horas').value, // Vem da tabela
-        valor: document.getElementById('valor').value, // Vem da tabela ($/OM)
+        preco: document.getElementById('preco').value,
+        horas: document.getElementById('horas').value,
+        valor: document.getElementById('valor').value,
         status: document.getElementById('status').value,
         obs: document.getElementById('obs').value
     };
-
     if(!item.nome) { alert("O nome da máquina é obrigatório."); return; }
-
     inventoryData.push(item);
     saveData();
     load();
     clearForm();
 }
 
-function saveData() {
-    localStorage.setItem('oficina_inventory', JSON.stringify(inventoryData));
-}
-
+function saveData() { localStorage.setItem('oficina_inventory', JSON.stringify(inventoryData)); }
 function clearForm() {
     document.getElementById('om').value = '';
     document.getElementById('patrimonio').value = '';
@@ -215,23 +208,16 @@ function clearForm() {
     document.getElementById('obs').value = '';
 }
 
-// --- LÓGICA DE SELEÇÃO E RENDERIZAÇÃO ---
-
 function load(){
     const tbody = document.getElementById('lista');
     tbody.innerHTML = '';
     document.getElementById('selectAll').checked = false;
-
     inventoryData.forEach((item, index) => {
         const tr = document.createElement('tr');
-        // Formata valores para moeda se existirem
         const precoFormatado = item.preco ? `R$ ${parseFloat(item.preco).toFixed(2)}` : '-';
         const valorFormatado = item.valor ? `R$ ${parseFloat(item.valor).toFixed(2)}` : '-';
-
         tr.innerHTML = `
-            <td style="text-align: center;">
-                <input type="checkbox" class="row-select" data-index="${index}">
-            </td>
+            <td style="text-align: center;"><input type="checkbox" class="row-select" data-index="${index}"></td>
             <td>${item.om}</td>
             <td>${item.patrimonio}</td>
             <td>${item.nome}</td>
@@ -246,16 +232,13 @@ function load(){
 }
 
 function toggleSelectAll(source) {
-    const checkboxes = document.querySelectorAll('.row-select');
-    checkboxes.forEach(cb => cb.checked = source.checked);
+    document.querySelectorAll('.row-select').forEach(cb => cb.checked = source.checked);
 }
 
 function getSelectedData() {
     const checkboxes = document.querySelectorAll('.row-select:checked');
     if (checkboxes.length === 0) {
-        if(confirm("Nenhum item selecionado. Deseja exportar TODOS os itens?")) {
-            return inventoryData;
-        }
+        if(confirm("Deseja selecionar TODOS os itens?")) return inventoryData;
         return [];
     }
     const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-index')));
@@ -265,65 +248,113 @@ function getSelectedData() {
 function deleteSelected() {
     const checkboxes = document.querySelectorAll('.row-select:checked');
     if (checkboxes.length === 0) return alert("Selecione itens para excluir.");
-    
-    if(!confirm(`Tem certeza que deseja excluir ${checkboxes.length} itens?`)) return;
-
-    const selectedIndices = Array.from(checkboxes)
-        .map(cb => parseInt(cb.getAttribute('data-index')))
-        .sort((a, b) => b - a);
-
-    selectedIndices.forEach(index => {
-        inventoryData.splice(index, 1);
-    });
-
+    if(!confirm(`Excluir ${checkboxes.length} itens?`)) return;
+    const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-index'))).sort((a, b) => b - a);
+    selectedIndices.forEach(index => inventoryData.splice(index, 1));
     saveData();
     load();
 }
 
-// --- EXPORTAÇÃO ---
+// --- FUNÇÕES AUXILIARES DE GERAÇÃO (PDF e EXCEL) ---
 
-function exportPDF(){
-    const dataToExport = getSelectedData();
-    if(dataToExport.length === 0) return;
-
+function generatePDFDoc(data) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-
     doc.text("Inventário da Oficina - Remuneração Variável", 14, 15);
-    
     const tableColumn = ["OM", "Patrimônio", "Nome", "Horas/OM", "Vlr. M.Obra", "Status"];
-    const tableRows = [];
+    const tableRows = data.map(item => [
+        item.om, item.patrimonio, item.nome, item.horas, 
+        `R$ ${parseFloat(item.valor || 0).toFixed(2)}`, item.status
+    ]);
+    doc.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
+    return doc;
+}
 
-    dataToExport.forEach(item => {
-        const rowData = [
-            item.om,
-            item.patrimonio,
-            item.nome,
-            item.horas,
-            `R$ ${parseFloat(item.valor || 0).toFixed(2)}`,
-            item.status
-        ];
-        tableRows.push(rowData);
-    });
+function generateExcelBlob(data) {
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventário");
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'binary' });
 
-    doc.autoTable({
-        head: [tableColumn],
-        body: tableRows,
-        startY: 20,
-    });
+    function s2ab(s) {
+        const buf = new ArrayBuffer(s.length);
+        const view = new Uint8Array(buf);
+        for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
+        return buf;
+    }
+    const arrayBuffer = s2ab(wbout);
 
+    return new Blob([arrayBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+}
+
+// --- FUNÇÕES DE DOWNLOAD (Mantidas para o fallback) ---
+function exportPDF(){
+    const data = getSelectedData();
+    if(data.length === 0) return;
+    const doc = generatePDFDoc(data);
     doc.save("inventario_oficina.pdf");
 }
 
 function exportExcel(){
-    const dataToExport = getSelectedData();
-    if(dataToExport.length === 0) return;
-
-    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const data = getSelectedData();
+    if(data.length === 0) return;
+    const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Inventário");
-
     XLSX.writeFile(workbook, "inventario_oficina.xlsx");
+}
+
+// --- FUNÇÃO CORRIGIDA DE COMPARTILHAMENTO ---
+async function shareFile(type) {
+    const data = getSelectedData();
+    if(data.length === 0) return;
+
+    let file, filename, mimeType, title, text;
+
+    try {
+        if (type === 'pdf') {
+            const doc = generatePDFDoc(data);
+            const blob = doc.output('blob');
+            filename = "inventario.pdf";
+            mimeType = "application/pdf";
+            title = 'Inventário da Oficina (PDF)';
+            text = 'Segue em anexo o relatório de inventário em PDF.';
+            file = new File([blob], filename, { type: mimeType });
+        } else if (type === 'excel') {
+            const blob = generateExcelBlob(data);
+            filename = "inventario.xlsx";
+            mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+            title = 'Inventário da Oficina (Excel)';
+            text = 'Segue em anexo o relatório de inventário em formato Excel.';
+            file = new File([blob], filename, { type: mimeType });
+        } else {
+            return; 
+        }
+
+        // 1. Tenta usar a API de Compartilhamento Nativa (celulares, navegadores modernos)
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+            await navigator.share({ title, text, files: [file] });
+        } else {
+            // 2. Fallback: Se o compartilhamento nativo falhar (em navegadores de desktop)
+            alert(`ATENÇÃO: Compartilhamento indisponível no seu navegador/dispositivo. Por segurança, navegadores não permitem que o site envie e-mails diretamente com arquivos.\n\nO arquivo (${filename}) será **baixado automaticamente** e você deverá anexá-lo manualmente no seu e-mail.`);
+            
+            if (type === 'pdf') {
+                exportPDF();
+            } else {
+                exportExcel(); // Chama a função de download do Excel
+            }
+        }
+    } catch (error) {
+        // 3. Captura de Erros: Se houver qualquer erro no processo (Ex: usuário cancelou, erro de geração)
+        console.error("Erro ou cancelamento no compartilhamento:", error);
+        alert(`Ocorreu um erro ou o compartilhamento foi cancelado. O arquivo será baixado para que você possa anexá-lo manualmente.`);
+        
+        if (type === 'pdf') {
+            exportPDF();
+        } else {
+            exportExcel();
+        }
+    }
 }
 
 // Inicialização
