@@ -10,34 +10,29 @@
   .container { max-width:1000px; margin:0 auto; }
   .card { background:#14212d; padding:20px; border-radius:12px; margin-bottom:20px; }
   label { display:block; margin-top:10px; font-size:14px; }
-  input, select, textarea { width:100%; padding:8px; border-radius:6px; border:1px solid #2a3a4d; background:#0d1a24; color:#e6eef6; }
+  input, select, textarea { width:100%; padding:8px; border-radius:6px; border:1px solid #2a3a4d; background:#0d1a24; color:#e6eef6; box-sizing: border-box; }
   .row { display:flex; gap:12px; }
   .row > * { flex:1; }
   .inline { display:flex; gap:8px; align-items:center; }
   button { margin-top:15px; padding:10px 16px; border:none; border-radius:8px; cursor:pointer; background:#2b9cff; color:white; }
+  button:hover { background:#1a8be0; }
+  button.secondary { background: #2a3a4d; }
   .muted { color:#98a3b3; font-size:13px; }
   table { width:100%; border-collapse:collapse; margin-top:10px; }
   th, td { padding:10px; border-bottom:1px solid #2a3a4d; text-align:left; }
   th { background:#1c2b38; }
-  .top-actions { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+  /* Estilo para o checkbox */
+  input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+  .top-actions { display:flex; gap:8px; align-items:center; margin-bottom:6px; flex-wrap: wrap; }
 </style>
-
-<!-- Libraries (required for PDF and Excel export) -->
-<!-- These are loaded from CDNs. If you plan to use the app fully offline, host these files locally and update the script src accordingly. -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
-<link rel="manifest" href="manifest.json" />
-<script>
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('service-worker.js').catch(err=>console.warn('SW registration failed', err));
-  }
-</script>
 </head>
 <body>
 <div class="container">
   <h1>Inventário da Oficina</h1>
-
+  
   <div class="card">
     <h2>Adicionar Máquina</h2>
     <div class="row">
@@ -50,38 +45,32 @@
         <input id="patrimonio" placeholder="Número do patrimônio" />
       </div>
     </div>
-
     <label>Nome da Máquina</label>
     <div class="inline">
-      <input id="nome" list="equipamentosList" placeholder="Digite ou escolha..." />
-      <button id="autoFillBtn" type="button">Auto preencher</button>
+      <input id="nome" list="equipamentosList" placeholder="Digite ou escolha..." onchange="autofill()" />
+      <button id="autoFillBtn" type="button" class="secondary" onclick="autofill()">Auto preencher</button>
     </div>
     <datalist id="equipamentosList"></datalist>
-
     <div class="row">
       <div>
-        <label>Preço (R$)</label>
-        <input id="preco" type="number" step="any" />
+        <label>Preço do Ativo (R$)</label>
+        <input id="preco" type="number" step="any" placeholder="Valor de compra" />
       </div>
       <div>
-        <label>Horas trabalhadas</label>
+        <label>Horas trabalhadas (Por OM)</label>
         <input id="horas" type="number" step="any" />
       </div>
     </div>
-
-    <label>Valor da mão de obra (R$)</label>
+    <label>Valor da mão de obra (R$ / OM)</label>
     <input id="valor" type="number" step="any" />
-
     <label>Status</label>
     <select id="status">
       <option value="Disponível">Disponível</option>
       <option value="Aguardando peça">Aguardando peça</option>
       <option value="Em serviço">Em serviço</option>
     </select>
-
     <label>Observação</label>
     <textarea id="obs" rows="3"></textarea>
-
     <button onclick="addItem()">Salvar Máquina</button>
   </div>
 
@@ -91,20 +80,22 @@
       <div style="display:flex;gap:8px">
         <button onclick="exportPDF()">Exportar PDF</button>
         <button onclick="exportExcel()">Exportar Excel</button>
+        <button onclick="deleteSelected()" style="background:#d93025;">Excluir</button>
       </div>
     </div>
-
-    <p class="muted">Exporta todos os itens salvos (conforme solicitado).</p>
-
+    <p class="muted">Selecione os itens na tabela para exportar ou excluir.</p>
     <table>
       <thead>
         <tr>
+          <th style="width: 40px; text-align: center;">
+            <input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)">
+          </th>
           <th>OM</th>
           <th>Patrimônio</th>
           <th>Nome</th>
-          <th>Preço</th>
-          <th>Horas</th>
-          <th>Mão de obra</th>
+          <th>Preço Ativo</th>
+          <th>Horas/OM</th>
+          <th>Vlr. M.Obra</th>
           <th>Status</th>
           <th>Obs</th>
         </tr>
@@ -115,282 +106,229 @@
 </div>
 
 <script>
-// Banco de dados extraído da tabela (maiores nomes em maiúsculas para correspondência)
-const equipamentos = {
-  "ACABADORA DE SUPERF": {preco:2.00, horas:5},
-  "BALANCIM_CADEIRINHA": {preco:2.00, horas:2.25},
-  "BANCADA DE SERRA": {preco:16.00, horas:4.5},
-  "BETONEIRA 150 LT": {preco:6.00, horas:4.5},
-  "BETONEIRA 400LT": {preco:6.00, horas:4.5},
-  "BETONEIRA 600LT": {preco:16.90, horas:16},
-  "BOMBA MANGOTE": {preco:4.00, horas:3},
-  "BOMBA SUBMERSA": {preco:4.00, horas:8},
-  "COMPACTADOR": {preco:3.00, horas:4},
-  "CORTADORA": {preco:3.00, horas:4},
-  "GERADOR": {preco:6.00, horas:3.2},
-  "GUINCHO DE ELEVAÇÃO": {preco:20.00, horas:6},
-  "MARTELO 2 KG -220V": {preco:1.50, horas:2},
-  "MARTELO 5,7 KG-220V": {preco:1.50, horas:2},
-  "MARTELO 6 KG -220V": {preco:1.70, horas:2},
-  "MARTELO 11 KG - ROT": {preco:2.00, horas:2.2},
-  "MARTELO 16 KG -220V": {preco:1.70, horas:2.2},
-  "MARTELO 19 KG -220V": {preco:2.00, horas:2.5},
-  "MARTELO 30 KG -220V": {preco:2.00, horas:2.5},
-  "MINI GRUA": {preco:10.00, horas:6},
-  "MOTOR - ACIONADOR": {preco:3.00, horas:3},
-  "MOTOR - ELET_TRIFA": {preco:3.00, horas:3},
-  "PLACA VIBRATORIA": {preco:3.50, horas:4.5},
-  "REGUA VIBRATORIA": {preco:10.00, horas:4.5},
-  "TORRE DE ILUMINACAO": {preco:25.00, horas:6},
-  "UNIDADES HIDRAULICA": {preco:8.00, horas:16},
-  "VIBRADOR DE IMERSAO": {preco:2.80, horas:4},
-  "ROLO COMPACTADOR": {preco:20.00, horas:24},
-  "MINI CARREGADEIRA": {preco:34.00, horas:16},
-  "MINI ESCAVADEIRA": {preco:34.00, horas:16},
-  "PERFURATRIZ": {preco:25.00, horas:6}
+// --- BANCO DE DADOS DA TABELA DE IMAGEM ---
+// Mapeamento: Chave = Nome, Valor = { valor_mo: $/OM Normal, horas: Tempo em Hrs }
+const tabelaPrecos = {
+  "ACABADORA DE SUPERF": { valor: 2.00, horas: 5 },
+  "BALANCIM CADEIRINHA": { valor: 2.00, horas: 2.25 },
+  "BANCADA DE SERRA": { valor: 8.00, horas: 4.5 },
+  "BETONEIRA 150 LT": { valor: 6.00, horas: 4.5 },
+  "BETONEIRA 400LT": { valor: 6.00, horas: 4.5 },
+  "BETONEIRA 600LT": { valor: 16.90, horas: 16 },
+  "BOMBA MANGOTE": { valor: 4.00, horas: 3 },
+  "BOMBA SUBMERSA": { valor: 4.00, horas: 4 },
+  "COMPACTADOR": { valor: 3.00, horas: 4 },
+  "CORTADORA": { valor: 3.00, horas: 4 },
+  "GERADOR": { valor: 3.00, horas: 3.2 },
+  "GUINCHO DE ELEVAÇÃO": { valor: 10.00, horas: 6 },
+  "MARTELO 2 KG - 220V": { valor: 1.50, horas: 2 },
+  "MARTELO 5,7 KG - 220V": { valor: 1.50, horas: 2 },
+  "MARTELO 6 KG - 220V": { valor: 1.70, horas: 2 },
+  "MARTELO 11 KG - ROT": { valor: 2.00, horas: 2.2 },
+  "MARTELO 11 KG - 220V": { valor: 1.70, horas: 2.2 },
+  "MARTELO 16/19 KG": { valor: 2.00, horas: 2.3 },
+  "MARTELO 19 KG - 220V": { valor: 2.00, horas: 2.5 },
+  "MARTELO 30 KG - 220V": { valor: 2.00, horas: 2.5 },
+  "MINI GRUA": { valor: 10.00, horas: 6 },
+  "MOTOR - ACIONADOR": { valor: 3.00, horas: 3 },
+  "MOTOR - ELET_TRIFA": { valor: 3.00, horas: 3 },
+  "PLACA VIBRATORIA": { valor: 3.50, horas: 4.5 },
+  "REGUA VIBRATORIA": { valor: 5.00, horas: 4.5 },
+  "TORRE DE ILUMINACAO": { valor: 25.00, horas: 6 },
+  "UNIDADES HIDRAULICA": { valor: 8.00, horas: 16 },
+  "VIBRADOR DE IMERSAO": { valor: 2.80, horas: 4 },
+  "ROLO COMPACTADOR": { valor: 20.00, horas: 24 },
+  "MINI CARREGADEIRA": { valor: 34.00, horas: 16 },
+  "MINI ESCAVADEIRA": { valor: 34.00, horas: 16 },
+  "VELOX": { valor: 8.00, horas: 6 },
+  "PERFURATRIZ": { valor: 25.00, horas: 6 },
+  "MAQUINA PESADA": { valor: 34.00, horas: 16 }
 };
 
-function load() {
-  const data = JSON.parse(localStorage.getItem('inventario') || '[]');
-  const tbody = document.getElementById('lista');
-  tbody.innerHTML = '';
-  data.forEach(item => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${item.om || ''}</td>
-      <td>${item.patrimonio || ''}</td>
-      <td>${item.nome || ''}</td>
-      <td>R$ ${item.preco || ''}</td>
-      <td>${item.horas || ''}</td>
-      <td>R$ ${item.valor || ''}</td>
-      <td>${item.status || ''}</td>
-      <td>${item.obs || ''}</td>`;
-    tbody.appendChild(tr);
-  });
-}
+// Dados Iniciais (Simulando LocalStorage se vazio)
+let inventoryData = JSON.parse(localStorage.getItem('oficina_inventory')) || [];
 
-// Preenchimento automático
-function autofill() {
-  const nomeInput = document.getElementById('nome');
-  const nome = (nomeInput.value || '').toUpperCase();
-  // tentativa de correspondência exata
-  if (equipamentos[nome]) {
-    document.getElementById('preco').value = equipamentos[nome].preco;
-    document.getElementById('horas').value = equipamentos[nome].horas;
-    return;
-  }
-  // correspondência parcial: procura por chave que inclua o texto digitado
-  if (nome.length >= 2) {
-    const foundKey = Object.keys(equipamentos).find(k => k.includes(nome));
-    if (foundKey) {
-      document.getElementById('preco').value = equipamentos[foundKey].preco;
-      document.getElementById('horas').value = equipamentos[foundKey].horas;
-    }
-  }
-}
-
+// Preenche o DataList com as chaves do objeto tabelaPrecos
 function populateOptions(){
-  const dl = document.getElementById('equipamentosList');
-  dl.innerHTML = '';
-  Object.keys(equipamentos).forEach(k=>{
-    const opt = document.createElement('option');
-    opt.value = k;
-    dl.appendChild(opt);
-  });
+    const datalist = document.getElementById('equipamentosList');
+    datalist.innerHTML = '';
+    // Ordena alfabeticamente para facilitar a busca
+    Object.keys(tabelaPrecos).sort().forEach(item => {
+        let option = document.createElement('option');
+        option.value = item;
+        datalist.appendChild(option);
+    });
 }
 
-document.getElementById('nome').addEventListener('input', autofill);
-document.getElementById('autoFillBtn').addEventListener('click', autofill);
+// Lógica de Preenchimento Automático
+function autofill() {
+    const nomeInput = document.getElementById('nome').value.toUpperCase().trim();
+    const dados = tabelaPrecos[nomeInput];
+
+    if (dados) {
+        // Se encontrou o nome exato na lista
+        document.getElementById('valor').value = dados.valor;
+        document.getElementById('horas').value = dados.horas;
+    } else {
+        // Tentativa de busca parcial (caso o usuário digite "Betoneira" e existam várias)
+        // Isso é opcional, mas ajuda se o usuário não selecionar da lista
+        const match = Object.keys(tabelaPrecos).find(key => key.includes(nomeInput));
+        if(match && nomeInput.length > 3) {
+             document.getElementById('valor').value = tabelaPrecos[match].valor;
+             document.getElementById('horas').value = tabelaPrecos[match].horas;
+        }
+    }
+}
+
+// Salva e Recarrega a Tabela
+function addItem(){
+    const item = {
+        om: document.getElementById('om').value,
+        patrimonio: document.getElementById('patrimonio').value,
+        nome: document.getElementById('nome').value,
+        preco: document.getElementById('preco').value, // Preço do Ativo (Manual)
+        horas: document.getElementById('horas').value, // Vem da tabela
+        valor: document.getElementById('valor').value, // Vem da tabela ($/OM)
+        status: document.getElementById('status').value,
+        obs: document.getElementById('obs').value
+    };
+
+    if(!item.nome) { alert("O nome da máquina é obrigatório."); return; }
+
+    inventoryData.push(item);
+    saveData();
+    load();
+    clearForm();
+}
+
+function saveData() {
+    localStorage.setItem('oficina_inventory', JSON.stringify(inventoryData));
+}
+
+function clearForm() {
+    document.getElementById('om').value = '';
+    document.getElementById('patrimonio').value = '';
+    document.getElementById('nome').value = '';
+    document.getElementById('preco').value = '';
+    document.getElementById('horas').value = '';
+    document.getElementById('valor').value = '';
+    document.getElementById('obs').value = '';
+}
+
+// --- LÓGICA DE SELEÇÃO E RENDERIZAÇÃO ---
+
+function load(){
+    const tbody = document.getElementById('lista');
+    tbody.innerHTML = '';
+    document.getElementById('selectAll').checked = false;
+
+    inventoryData.forEach((item, index) => {
+        const tr = document.createElement('tr');
+        // Formata valores para moeda se existirem
+        const precoFormatado = item.preco ? `R$ ${parseFloat(item.preco).toFixed(2)}` : '-';
+        const valorFormatado = item.valor ? `R$ ${parseFloat(item.valor).toFixed(2)}` : '-';
+
+        tr.innerHTML = `
+            <td style="text-align: center;">
+                <input type="checkbox" class="row-select" data-index="${index}">
+            </td>
+            <td>${item.om}</td>
+            <td>${item.patrimonio}</td>
+            <td>${item.nome}</td>
+            <td>${precoFormatado}</td>
+            <td>${item.horas}</td>
+            <td>${valorFormatado}</td>
+            <td>${item.status}</td>
+            <td>${item.obs}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function toggleSelectAll(source) {
+    const checkboxes = document.querySelectorAll('.row-select');
+    checkboxes.forEach(cb => cb.checked = source.checked);
+}
+
+function getSelectedData() {
+    const checkboxes = document.querySelectorAll('.row-select:checked');
+    if (checkboxes.length === 0) {
+        if(confirm("Nenhum item selecionado. Deseja exportar TODOS os itens?")) {
+            return inventoryData;
+        }
+        return [];
+    }
+    const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-index')));
+    return inventoryData.filter((_, index) => selectedIndices.includes(index));
+}
+
+function deleteSelected() {
+    const checkboxes = document.querySelectorAll('.row-select:checked');
+    if (checkboxes.length === 0) return alert("Selecione itens para excluir.");
+    
+    if(!confirm(`Tem certeza que deseja excluir ${checkboxes.length} itens?`)) return;
+
+    const selectedIndices = Array.from(checkboxes)
+        .map(cb => parseInt(cb.getAttribute('data-index')))
+        .sort((a, b) => b - a);
+
+    selectedIndices.forEach(index => {
+        inventoryData.splice(index, 1);
+    });
+
+    saveData();
+    load();
+}
+
+// --- EXPORTAÇÃO ---
+
+function exportPDF(){
+    const dataToExport = getSelectedData();
+    if(dataToExport.length === 0) return;
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    doc.text("Inventário da Oficina - Remuneração Variável", 14, 15);
+    
+    const tableColumn = ["OM", "Patrimônio", "Nome", "Horas/OM", "Vlr. M.Obra", "Status"];
+    const tableRows = [];
+
+    dataToExport.forEach(item => {
+        const rowData = [
+            item.om,
+            item.patrimonio,
+            item.nome,
+            item.horas,
+            `R$ ${parseFloat(item.valor || 0).toFixed(2)}`,
+            item.status
+        ];
+        tableRows.push(rowData);
+    });
+
+    doc.autoTable({
+        head: [tableColumn],
+        body: tableRows,
+        startY: 20,
+    });
+
+    doc.save("inventario_oficina.pdf");
+}
+
+function exportExcel(){
+    const dataToExport = getSelectedData();
+    if(dataToExport.length === 0) return;
+
+    const worksheet = XLSX.utils.json_to_sheet(dataToExport);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventário");
+
+    XLSX.writeFile(workbook, "inventario_oficina.xlsx");
+}
+
+// Inicialização
 populateOptions();
-
-function addItem() {
-  const item = {
-    om: document.getElementById('om').value,
-    patrimonio: document.getElementById('patrimonio').value,
-    nome: document.getElementById('nome').value,
-    preco: document.getElementById('preco').value,
-    horas: document.getElementById('horas').value,
-    valor: document.getElementById('valor').value,
-    status: document.getElementById('status').value,
-    obs: document.getElementById('obs').value,
-  };
-
-  const data = JSON.parse(localStorage.getItem('inventario') || '[]');
-  data.push(item);
-  localStorage.setItem('inventario', JSON.stringify(data));
-  load();
-
-  document.getElementById('om').value = '';
-  document.getElementById('patrimonio').value = '';
-  document.getElementById('nome').value = '';
-  document.getElementById('preco').value = '';
-  document.getElementById('horas').value = '';
-  document.getElementById('valor').value = '';
-  document.getElementById('obs').value = '';
-}
-
 load();
 </script>
-
-<script>
-// ----- EXPORTAR PDF -----
-function exportPDF() {
-  // Verifica se jspdf foi carregado
-  if (!window.jspdf || !window.jspdf.jsPDF) {
-    alert('Erro: biblioteca jsPDF não encontrada. Verifique se a conexão CDN foi carregada ou hospede a biblioteca localmente.');
-    return;
-  }
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF('p','pt','a4');
-
-  doc.setFontSize(18);
-  doc.text('Inventário de Equipamentos', 40, 40);
-
-  doc.setFontSize(12);
-  doc.text('Data: ' + new Date().toLocaleDateString(), 40, 70);
-
-  const data = JSON.parse(localStorage.getItem('inventario') || '[]');
-
-  let y = 100;
-  const left = 40;
-  const colWidths = [70,80,160,60,50,80,80,140]; // rough widths
-
-  // Header
-  doc.setFontSize(10);
-  const headers = ['OM','Patrimônio','Nome','Preço','Horas','Mão de obra','Status','Obs'];
-  let x = left;
-  headers.forEach((h,i)=>{ doc.text(String(h), x, y); x += colWidths[i]; });
-  y += 18;
-
-  doc.setFontSize(9);
-  data.forEach(item => {
-    if (y > 740) { doc.addPage(); y = 40; }
-    let x2 = left;
-    const row = [item.om || '', item.patrimonio || '', item.nome || '', (item.preco || ''), (item.horas || ''), (item.valor || ''), item.status || '', item.obs || ''];
-    row.forEach((cell,i)=>{
-      // wrap long text simply
-      const text = String(cell).substring(0,40);
-      doc.text(text, x2, y);
-      x2 += colWidths[i];
-    });
-    y += 16;
-  });
-
-  doc.save('inventario.pdf');
-}
-
-// ----- EXPORTAR EXCEL -----
-function exportExcel() {
-  if (typeof XLSX === 'undefined') {
-    alert('Erro: biblioteca XLSX (SheetJS) não encontrada. Verifique se a conexão CDN foi carregada ou hospede a biblioteca localmente.');
-    return;
-  }
-
-  const data = JSON.parse(localStorage.getItem('inventario') || '[]');
-  const wb = XLSX.utils.book_new();
-
-  // ABA 1 – INVENTÁRIO
-  const ws1Data = [
-    ['OM','Patrimônio','Nome','Preço','Horas','Valor','Status','Observação'],
-    ...data.map(i => [i.om, i.patrimonio, i.nome, i.preco, i.horas, i.valor, i.status, i.obs])
-  ];
-  const ws1 = XLSX.utils.aoa_to_sheet(ws1Data);
-  // aplicar autofiltro
-  ws1['!autofilter'] = { ref: XLSX.utils.encode_range({s:{r:0,c:0}, e:{r:Math.max(ws1Data.length-1,0), c:7}}) };
-  XLSX.utils.book_append_sheet(wb, ws1, 'Inventário');
-
-  // ABA 2 – RESUMO
-  const total = data.length;
-  const disponivel = data.filter(i => (i.status||'').toLowerCase().includes('dispon')).length;
-  const manutencao = data.filter(i => (i.status||'').toLowerCase().includes('peça') || (i.status||'').toLowerCase().includes('aguard')).length;
-  const somaValores = data.reduce((t, v) => t + Number(v.valor || 0), 0);
-
-  const ws2Data = [
-    ['Resumo'],
-    ['Total de Equipamentos', total],
-    ['Disponíveis', disponivel],
-    ['Em Manutenção', manutencao],
-    ['Valor Total em Mão de Obra (soma)', somaValores]
-  ];
-  const ws2 = XLSX.utils.aoa_to_sheet(ws2Data);
-  XLSX.utils.book_append_sheet(wb, ws2, 'Resumo');
-
-  XLSX.writeFile(wb, 'inventario.xlsx');
-}
-</script>
-<script>
-let deferredPrompt;
-
-// Detecta quando o app é instalável
-window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault(); 
-    deferredPrompt = e;
-
-    const installBtn = document.getElementById("installBtn");
-    installBtn.style.display = "block"; // mostra o botão
-});
-
-// Clique do usuário no botão de instalação
-async function instalarPWA() {
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    const escolha = await deferredPrompt.userChoice;
-
-    if (escolha.outcome === "accepted") {
-        console.log("Usuário instalou o PWA");
-    } else {
-        console.log("Usuário recusou");
-    }
-
-    deferredPrompt = null;
-    document.getElementById("installBtn").style.display = "none";
-}
-</script>
-
 </body>
 </html>
-
-<!-- ================= MANIFEST.JSON (criar arquivo separado) ================= -->
-<!-- Salve como: manifest.json -->
-<!--
-{
-  "name": "Inventário de Manutenção",
-  "short_name": "Inventário",
-  "start_url": "index.html",
-  "scope": "./",
-  "display": "standalone",
-  "background_color": "#ffffff",
-  "theme_color": "#0d6efd",
-  "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
-  ]
-}
--->
-
-<!-- ================= SERVICE-WORKER.JS (criar arquivo separado) ================= -->
-<!-- Salve como: service-worker.js -->
-<!--
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open('inventario-cache').then((cache) => {
-      return cache.addAll([
-        './',
-        './index.html',
-        './manifest.json',
-        './icon-192.png',
-        './icon-512.png'
-      ]);
-    })
-  );
-});
-
-self.addEventListener('fetch', (e) => {
-  e.respondWith(
-    caches.match(e.request).then((resp) => {
-      return resp || fetch(e.request);
-    })
-  );
-});
--->
