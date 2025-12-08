@@ -24,6 +24,10 @@
   button.share-excel { background: #eab308; } /* Amarelo para Excel */
   button.share-excel:hover { background: #d99905; }
   
+  /* ESTILO NOVO: Botão APK */
+  button.btn-apk { background: #8e44ad; } /* Roxo */
+  button.btn-apk:hover { background: #732d91; }
+  
   .muted { color:#98a3b3; font-size:13px; }
   table { width:100%; border-collapse:collapse; margin-top:10px; }
   th, td { padding:10px; border-bottom:1px solid #2a3a4d; text-align:left; }
@@ -84,6 +88,9 @@
     <div class="top-actions">
       <div style="flex:1"><h2 style="margin:0">Inventário</h2></div>
       <div style="display:flex;gap:8px; flex-wrap:wrap;">
+        
+        <button onclick="downloadAPK()" class="btn-apk">📱 Baixar App</button>
+        
         <button onclick="shareFile('pdf')" class="share-btn share-pdf">📧 Compartilhar PDF</button>
         <button onclick="shareFile('excel')" class="share-btn share-excel">📧 Compartilhar Excel</button>
         <button onclick="exportPDF()">Baixar PDF</button>
@@ -331,21 +338,18 @@ async function shareFile(type) {
             return; 
         }
 
-        // 1. Tenta usar a API de Compartilhamento Nativa (celulares, navegadores modernos)
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
             await navigator.share({ title, text, files: [file] });
         } else {
-            // 2. Fallback: Se o compartilhamento nativo falhar (em navegadores de desktop)
             alert(`ATENÇÃO: Compartilhamento indisponível no seu navegador/dispositivo. Por segurança, navegadores não permitem que o site envie e-mails diretamente com arquivos.\n\nO arquivo (${filename}) será **baixado automaticamente** e você deverá anexá-lo manualmente no seu e-mail.`);
             
             if (type === 'pdf') {
                 exportPDF();
             } else {
-                exportExcel(); // Chama a função de download do Excel
+                exportExcel();
             }
         }
     } catch (error) {
-        // 3. Captura de Erros: Se houver qualquer erro no processo (Ex: usuário cancelou, erro de geração)
         console.error("Erro ou cancelamento no compartilhamento:", error);
         alert(`Ocorreu um erro ou o compartilhamento foi cancelado. O arquivo será baixado para que você possa anexá-lo manualmente.`);
         
@@ -357,9 +361,18 @@ async function shareFile(type) {
     }
 }
 
+// --- FUNÇÃO PARA BAIXAR APK DO GITHUB ---
+function downloadAPK() {
+    // Link corrigido para baixar direto (RAW)
+    const linkGithub = "https://github.com/jeosafa123/SVROM/raw/main/VSROM.apk";
+    
+    // Abre em nova aba para forçar o download
+    window.open(linkGithub, '_blank');
+}
+
 // Inicialização
 populateOptions();
 load();
 </script>
 </body>
-</html>
+  </html>
