@@ -201,9 +201,15 @@ function addItem() {
     horas: parseFloat(document.getElementById("horas").value) || 0,
     valor: parseFloat(document.getElementById("valor").value) || 0
   };
-  if(!item.om || !item.nome) return alert("OM e Nome são obrigatórios!");
+
+  // Verificação de dados obrigatórios
+  if (!item.om || !item.nome) {
+    return alert("Campos OM e Nome são obrigatórios! Por favor, preencha todos os campos.");
+  }
+
   inventoryData.push(item);
-  saveData(); load();
+  saveData();
+  load();
   alert("Item salvo!");
 }
 
@@ -214,8 +220,17 @@ function load() {
   let th = 0, tv = 0;
 
   inventoryData.forEach((i, idx) => {
+    // Filtra os itens com base no termo de busca
     if (termo && !`${i.om} ${i.patrimonio} ${i.nome}`.toLowerCase().includes(termo)) return;
-    th += i.horas; tv += (i.valor || 0);
+
+    // Processa horas e valores acumulados
+    if (i.horas && i.valor) {
+      th += i.horas;
+      tv += i.valor;
+    } else {
+      console.warn("Registro inválido encontrado:", i);
+    }
+
     tbody.innerHTML += `<tr>
       <td><input type="checkbox" class="row-select" data-index="${idx}"></td>
       <td>${i.om}</td>
@@ -225,96 +240,24 @@ function load() {
       <td>R$ ${parseFloat(i.valor || 0).toFixed(2)}</td>
     </tr>`;
   });
+
   document.getElementById("totalHorasEntrada").innerText = th.toFixed(2);
   document.getElementById("totalValorEntrada").innerText = "R$ " + tv.toFixed(2);
-}
-
-// SINCRONIZAÇÃO INTELIGENTE
-async function syncData() {
-    let savedCode = localStorage.getItem("sync_code_oficina");
-    const mode = confirm("Deseja: \n[OK] ENVIAR para a nuvem \n[Cancelar] BAIXAR da nuvem");
-
-    if (mode) {
-        try {
-            const url = savedCode ? `https://api.jsonbin.io/v3/b/${savedCode}` : 'https://api.jsonbin.io/v3/b';
-            const method = savedCode ? 'PUT' : 'POST';
-            
-            const res = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json', 'X-Bin-Private': 'false' },
-                body: JSON.stringify(inventoryData)
-            });
-            const data = await res.json();
-            const binId = savedCode || data.metadata.id;
-            
-            localStorage.setItem("sync_code_oficina", binId);
-            prompt("Sincronizado! Código salvo neste aparelho:", binId);
-        } catch (e) { alert("Erro ao sincronizar. Verifique a internet."); }
-    } else {
-        const code = prompt("Digite o CÓDIGO de sincronização:", savedCode || "");
-        if (!code) return;
-        try {
-            const res = await fetch(`https://api.jsonbin.io/v3/b/${code}/latest`);
-            const data = await res.json();
-            if (confirm("Dados encontrados! Substituir lista atual?")) {
-                inventoryData = data.record;
-                localStorage.setItem("sync_code_oficina", code);
-                saveData(); load(); alert("Dados baixados com sucesso!");
-            }
-        } catch (e) { alert("Código inválido ou expirado."); }
-    }
+  console.log("Dados carregados com sucesso:", inventoryData, "Total Horas:", th, "Total Valor:", tv);
 }
 
 function deleteSelected() {
   const checks = document.querySelectorAll(".row-select:checked");
-  if(!checks.length || !confirm("Excluir?")) return;
-  const idxs = Array.from(checks).map(c => parseInt(c.getAttribute('data-index'))).sort((a,b)=>b-a);
-  idxs.forEach(i => inventoryData.splice(i,1));
-  saveData(); load();
+  if (!checks.length || !confirm("Excluir?")) return;
+
+  const idxs = Array.from(checks).map(c => parseInt(c.getAttribute('data-index'))).sort((a, b) => b - a);
+  idxs.forEach(i => inventoryData.splice(i, 1));
+  saveData();
+  load();
 }
 
 function toggleAll(source) {
   document.querySelectorAll(".row-select").forEach(c => c.checked = source.checked);
-}
-
-// COMPARTILHAMENTO
-async function shareFile(type) {
-    if(!inventoryData.length) return alert("Lista vazia.");
-    let file, filename;
-    if (type === 'pdf') {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-        doc.text("Relatorio Oficina", 14, 15);
-        const rows = inventoryData.map(i => [i.om, i.patrimonio, i.nome, i.horas, i.valor.toFixed(2)]);
-        doc.autoTable({ head: [["OM","Patr.","Nome","Hrs","Valor"]], body: rows, startY: 20 });
-        file = new File([doc.output('blob')], "relatorio.pdf", { type: "application/pdf" });
-        filename = "relatorio.pdf";
-    } else {
-        const ws = XLSX.utils.json_to_sheet(inventoryData);
-        const wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, "Dados");
-        const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-        file = new File([out], "relatorio.xlsx", { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-        filename = "relatorio.xlsx";
-    }
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Relatorio Oficina' });
-    } else {
-        const a = document.createElement("a");
-        a.href = URL.createObjectURL(file); a.download = filename; a.click();
-    }
-}
-
-function exportBackupMensal() {
-  const b = new Blob([JSON.stringify(inventoryData)], {type:"application/json"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(b); a.download = "backup.json"; a.click();
-}
-
-function importBackupMensal(e) {
-  const r = new FileReader();
-  r.onload = () => { inventoryData = JSON.parse(r.result); saveData(); load(); };
-  r.readAsText(e.target.files[0]);
 }
 
 load();
