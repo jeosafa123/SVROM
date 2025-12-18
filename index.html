@@ -3,268 +3,257 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Inventário da Oficina</title>
+<title>Sistema Oficina - Profissional</title>
+
 <style>
-  body { font-family: Arial, sans-serif; background:#0f1720; color:#e6eef6; margin:0; padding:20px; }
-  h1 { text-align:center; }
-  .container { max-width:1000px; margin:0 auto; }
-  .card { background:#14212d; padding:20px; border-radius:12px; margin-bottom:20px; }
-  label { display:block; margin-top:10px; font-size:14px; }
-  input, select, textarea { width:100%; padding:8px; border-radius:6px; border:1px solid #2a3a4d; background:#0d1a24; color:#e6eef6; box-sizing: border-box; }
-  .row { display:flex; gap:12px; }
-  .row > * { flex:1; }
-  .inline { display:flex; gap:8px; align-items:center; }
-  button { margin-top:15px; padding:10px 16px; border:none; border-radius:8px; cursor:pointer; background:#2b9cff; color:white; }
-  button:hover { background:#1a8be0; }
-  button.secondary { background: #2a3a4d; }
-  /* Estilos para botões de compartilhamento */
-  button.share-btn { margin-top: 5px; } 
-  button.share-pdf { background: #10b981; } /* Verde para PDF */
-  button.share-pdf:hover { background: #059669; }
-  button.share-excel { background: #eab308; } /* Amarelo para Excel */
-  button.share-excel:hover { background: #d99905; }
-  
-  .muted { color:#98a3b3; font-size:13px; }
-  table { width:100%; border-collapse:collapse; margin-top:10px; }
-  th, td { padding:10px; border-bottom:1px solid #2a3a4d; text-align:left; }
-  th { background:#1c2b38; }
-  input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
-  .top-actions { display:flex; gap:8px; align-items:center; margin-bottom:6px; flex-wrap: wrap; }
+/* Estilização Geral */
+body { font-family: 'Segoe UI', sans-serif; background:#0f1720; color:#e6eef6; margin:0; padding:20px; }
+.container { max-width:1100px; margin:0 auto; }
+h1 { text-align:center; color: #2b9cff; margin-bottom: 30px; }
+
+/* Sistema de Abas */
+.tab-container { display: flex; border-bottom: 2px solid #2a3a4d; margin-bottom: 20px; gap: 5px; }
+.tab-button {
+  background: #14212d; color: #98a3b3; border: none; padding: 12px 25px;
+  cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; transition: 0.3s;
+}
+.tab-button.active { background: #2b9cff; color: white; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Cards e Forms */
+.card { background:#14212d; padding:25px; border-radius:12px; margin-bottom:20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+label { display:block; margin-top:12px; font-weight: 600; color: #a0aec0; }
+input, select {
+  width:100%; padding:12px; border-radius:6px;
+  border:1px solid #2a3a4d; background:#0d1a24; color:#fff;
+  box-sizing: border-box; margin-top: 5px; font-size: 15px;
+}
+.row { display:flex; gap:15px; flex-wrap: wrap; }
+.row > * { flex:1; min-width: 200px; }
+
+/* Botões */
+button { padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font-weight: bold; transition: 0.2s; }
+.btn-main { background:#2b9cff; color: white; width: 100%; margin-top: 20px; font-size: 16px; }
+.btn-red { background:#dc2626; color: white; }
+.btn-green { background:#16a34a; color: white; }
+.btn-blue { background:#2563eb; color: white; }
+.btn-share { background:#8b5cf6; color: white; } /* Cor para Compartilhar */
+
+/* Tabela */
+table { width:100%; border-collapse:collapse; margin-top:15px; background: #0d1a24; border-radius: 8px; overflow: hidden; }
+th, td { padding:15px; border-bottom: 1px solid #2a3a4d; text-align: left; }
+th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 11px; }
+
+/* Dashboard */
+.stat-box { background:#0d1a24; padding:15px; border-radius:8px; text-align: center; border: 1px solid #2a3a4d; }
+.stat-val { font-size: 1.8em; font-weight: bold; color: #4ade80; }
 </style>
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
+
 <body>
 <div class="container">
-  <h1>Inventário da Oficina</h1>
-  
-  <div class="card">
-    <h2>Adicionar Máquina</h2>
-    <div class="row">
-      <div>
-        <label>OM</label>
-        <input id="om" placeholder="Número da OM" />
-      </div>
-      <div>
-        <label>Patrimônio</label>
-        <input id="patrimonio" placeholder="Número do patrimônio" />
-      </div>
-    </div>
-    <label>Nome da Máquina</label>
-    <div class="inline">
-      <input id="nome" list="equipamentosList" placeholder="Digite ou escolha..." onchange="autofill()" />
-      <button id="autoFillBtn" type="button" class="secondary" onclick="autofill()">Auto preencher</button>
-    </div>
-    <datalist id="equipamentosList"></datalist>
-    <div class="row">
-      <div>
-        <label>Preço do Ativo (R$)</label>
-        <input id="preco" type="number" step="any" placeholder="Valor de compra" />
-      </div>
-      <div>
-        <label>Horas trabalhadas (Por OM)</label>
-        <input id="horas" type="number" step="any" />
-      </div>
-    </div>
-    <label>Valor da mão de obra (R$ / OM)</label>
-    <input id="valor" type="number" step="any" />
-    <label>Status</label>
-    <select id="status">
-      <option value="Disponível">Disponível</option>
-      <option value="Aguardando peça">Aguardando peça</option>
-      <option value="Em serviço">Em serviço</option>
-    </select>
-    <label>Observação</label>
-    <textarea id="obs" rows="3"></textarea>
-    <button onclick="addItem()">Salvar Máquina</button>
+  <h1>Gestão Oficina Mecânica</h1>
+
+  <div class="tab-container">
+    <button class="tab-button active" onclick="openTab('tab-entrada')">📝 Lançamento</button>
+    <button class="tab-button" onclick="openTab('tab-inventario')">📋 Banco de Dados</button>
   </div>
 
-  <div class="card">
-    <div class="top-actions">
-      <div style="flex:1"><h2 style="margin:0">Inventário</h2></div>
-      <div style="display:flex;gap:8px; flex-wrap:wrap;">
-        <button onclick="shareFile('pdf')" class="share-btn share-pdf">📧 Compartilhar PDF</button>
-        <button onclick="shareFile('excel')" class="share-btn share-excel">📧 Compartilhar Excel</button>
-        <button onclick="exportPDF()">Baixar PDF</button>
-        <button onclick="exportExcel()">Baixar Excel</button>
-        <button onclick="deleteSelected()" style="background:#d93025;">Excluir</button>
+  <div id="tab-entrada" class="tab-content active">
+    <div class="card">
+      <h2>Novo Registro</h2>
+      <div class="row">
+        <div><label>OM</label><input id="om" placeholder="Ex: 198"></div>
+        <div><label>Patrimônio</label><input id="patrimonio" placeholder="Ex: 102030"></div>
+      </div>
+      <label>Equipamento (Tabela de Preços)</label>
+      <select id="nome" onchange="autoPreencher()">
+        <option value="">-- Selecione o item --</option>
+      </select>
+      <div class="row">
+        <div><label>Horas</label><input id="horas" type="number" step="0.01"></div>
+        <div><label>Valor Unitário (R$)</label><input id="valor" type="number" step="0.01"></div>
+      </div>
+      <button class="btn-main" onclick="addItem()">ADICIONAR AO INVENTÁRIO</button>
+    </div>
+    
+    <div class="card">
+      <div class="row">
+        <div class="stat-box">
+          <div style="color:#98a3b3;">Horas Acumuladas</div>
+          <div id="totalHorasEntrada" class="stat-val" style="color:#fff">0.00</div>
+        </div>
+        <div class="stat-box">
+          <div style="color:#98a3b3;">Custo Acumulado</div>
+          <div id="totalValorEntrada" class="stat-val">R$ 0,00</div>
+        </div>
       </div>
     </div>
-    <p class="muted">Selecione os itens na tabela para enviar, baixar ou excluir.</p>
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 40px; text-align: center;">
-            <input type="checkbox" id="selectAll" onclick="toggleSelectAll(this)">
-          </th>
-          <th>OM</th>
-          <th>Patrimônio</th>
-          <th>Nome</th>
-          <th>Preço Ativo</th>
-          <th>Horas/OM</th>
-          <th>Vlr. M.Obra</th>
-          <th>Status</th>
-          <th>Obs</th>
-        </tr>
-      </thead>
-      <tbody id="lista"></tbody>
-    </table>
+  </div>
+
+  <div id="tab-inventario" class="tab-content">
+    <div class="card">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;">
+        <button onclick="shareFile('pdf')" class="btn-share">📤 Compartilhar PDF</button>
+        <button onclick="shareFile('excel')" class="btn-share">📤 Compartilhar Excel</button>
+        <button onclick="exportBackupMensal()" class="btn-blue">📥 Backup</button>
+        <label class="btn-blue" style="padding: 10px 15px; border-radius: 8px; cursor: pointer;">
+          ♻️ Importar <input type="file" accept=".json" hidden onchange="importBackupMensal(event)">
+        </label>
+        <button onclick="deleteSelected()" class="btn-red" style="margin-left: auto;">🗑️ Excluir</button>
+      </div>
+
+      <input type="text" id="searchInput" placeholder="🔍 Buscar..." onkeyup="load()" style="margin-bottom: 15px; border: 1px solid #2b9cff;">
+
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 20px;"><input type="checkbox" onclick="toggleAll(this)"></th>
+            <th>OM</th>
+            <th>Patrimônio</th>
+            <th>Equipamento</th>
+            <th>Horas</th>
+            <th>Valor</th>
+          </tr>
+        </thead>
+        <tbody id="lista"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
 <script>
-// --- BANCO DE DADOS E LÓGICA ---
-const tabelaPrecos = {
-  "ACABADORA DE SUPERF": { valor: 2.00, horas: 5 },
-  "BALANCIM CADEIRINHA": { valor: 2.00, horas: 2.25 },
-  "BANCADA DE SERRA": { valor: 8.00, horas: 4.5 },
-  "BETONEIRA 150 LT": { valor: 6.00, horas: 4.5 },
-  "BETONEIRA 400LT": { valor: 6.00, horas: 4.5 },
-  "BETONEIRA 600LT": { valor: 16.90, horas: 16 },
-  "BOMBA MANGOTE": { valor: 4.00, horas: 3 },
-  "BOMBA SUBMERSA": { valor: 4.00, horas: 4 },
-  "COMPACTADOR": { valor: 3.00, horas: 4 },
-  "CORTADORA": { valor: 3.00, horas: 4 },
-  "GERADOR": { valor: 3.00, horas: 3.2 },
-  "GUINCHO DE ELEVAÇÃO": { valor: 10.00, horas: 6 },
-  "MARTELO 2 KG - 220V": { valor: 1.50, horas: 2 },
-  "MARTELO 5,7 KG - 220V": { valor: 1.50, horas: 2 },
-  "MARTELO 6 KG - 220V": { valor: 1.70, horas: 2 },
-  "MARTELO 11 KG - ROT": { valor: 2.00, horas: 2.2 },
-  "MARTELO 11 KG - 220V": { valor: 1.70, horas: 2.2 },
-  "MARTELO 16/19 KG": { valor: 2.00, horas: 2.3 },
-  "MARTELO 19 KG - 220V": { valor: 2.00, horas: 2.5 },
-  "MARTELO 30 KG - 220V": { valor: 2.00, horas: 2.5 },
-  "MINI GRUA": { valor: 10.00, horas: 6 },
-  "MOTOR - ACIONADOR": { valor: 3.00, horas: 3 },
-  "MOTOR - ELET_TRIFA": { valor: 3.00, horas: 3 },
-  "PLACA VIBRATORIA": { valor: 3.50, horas: 4.5 },
-  "REGUA VIBRATORIA": { valor: 5.00, horas: 4.5 },
-  "TORRE DE ILUMINACAO": { valor: 25.00, horas: 6 },
-  "UNIDADES HIDRAULICA": { valor: 8.00, horas: 16 },
-  "VIBRADOR DE IMERSAO": { valor: 2.80, horas: 4 },
-  "ROLO COMPACTADOR": { valor: 20.00, horas: 24 },
-  "MINI CARREGADEIRA": { valor: 34.00, horas: 16 },
-  "MINI ESCAVADEIRA": { valor: 34.00, horas: 16 },
-  "VELOX": { valor: 8.00, horas: 6 },
-  "PERFURATRIZ": { valor: 25.00, horas: 6 },
-  "MAQUINA PESADA": { valor: 34.00, horas: 16 }
-};
+/* DADOS DO BANCO (IMAGEM) */
+const tabelaPrecos = [
+  { nome: "ACABADORA DE SUPERFICIE", valor: 2.00, horas: 5.0 },
+  { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
+  { nome: "BANCADA DE SERRA", valor: 8.00, horas: 4.5 },
+  { nome: "BETONEIRA 150 LT", valor: 6.00, horas: 4.5 },
+  { nome: "BETONEIRA 400 LT", valor: 6.00, horas: 4.5 },
+  { nome: "BETONEIRA 600 LT", valor: 16.90, horas: 16.0 },
+  { nome: "BOMBA MANGOTE", valor: 4.00, horas: 3.0 },
+  { nome: "BOMBA SUBMERSA", valor: 4.00, horas: 4.0 },
+  { nome: "COMPACTADOR", valor: 3.00, horas: 4.0 },
+  { nome: "CORTADORA", valor: 3.00, horas: 4.0 },
+  { nome: "GERADOR", valor: 3.00, horas: 3.2 },
+  { nome: "GUINCHO DE ELEVAÇÃO", valor: 10.00, horas: 6.0 },
+  { nome: "MARTELO 2 KG - 220V", valor: 1.50, horas: 2.0 },
+  { nome: "MARTELO 5,7 KG - 220V", valor: 1.50, horas: 2.0 },
+  { nome: "MARTELO 6 KG - 220V", valor: 1.70, horas: 2.0 },
+  { nome: "MARTELO 11 KG - ROT", valor: 2.00, horas: 2.2 },
+  { nome: "MARTELO 11 KG - 220V", valor: 1.70, horas: 2.2 },
+  { nome: "MARTELO 16/19 KG", valor: 2.00, horas: 2.3 },
+  { nome: "MARTELO 19 KG - 220V", valor: 2.00, horas: 2.5 },
+  { nome: "MARTELO 30 KG - 220V", valor: 2.00, horas: 2.5 },
+  { nome: "MINI GRUA", valor: 10.00, horas: 6.0 },
+  { nome: "MOTOR - ACIONADOR", valor: 3.00, horas: 3.0 },
+  { nome: "MOTOR - ELET TRIFA", valor: 3.00, horas: 3.0 },
+  { nome: "PLACA VIBRATORIA", valor: 3.50, horas: 4.5 },
+  { nome: "RÉGUA VIBRATÓRIA", valor: 5.00, horas: 4.5 },
+  { nome: "TORRE DE ILUMINAÇÃO", valor: 25.00, horas: 6.0 },
+  { nome: "UNIDADE HIDRÁULICA", valor: 8.00, horas: 16.0 },
+  { nome: "VIBRADOR DE IMERSÃO", valor: 2.80, horas: 4.0 },
+  { nome: "ROLO COMPACTADOR (Pesada)", valor: 20.00, horas: 24.0 },
+  { nome: "MINI CARREGADEIRA (Pesada)", valor: 34.00, horas: 16.0 },
+  { nome: "MINI ESCAVADEIRA (Pesada)", valor: 34.00, horas: 16.0 },
+  { nome: "VELOX", valor: 8.00, horas: 6.0 },
+  { nome: "PERFURATRIZ", valor: 25.00, horas: 6.0 }
+];
 
-let inventoryData = JSON.parse(localStorage.getItem('oficina_inventory')) || [];
+// Iniciar Select
+const select = document.getElementById("nome");
+tabelaPrecos.forEach(i => select.innerHTML += `<option value="${i.nome}">${i.nome}</option>`);
 
-function populateOptions(){
-    const datalist = document.getElementById('equipamentosList');
-    datalist.innerHTML = '';
-    Object.keys(tabelaPrecos).sort().forEach(item => {
-        let option = document.createElement('option');
-        option.value = item;
-        datalist.appendChild(option);
-    });
+function openTab(tabId) {
+  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+  document.querySelectorAll('.tab-button').forEach(tb => tb.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+  event.currentTarget.classList.add('active');
 }
 
-function autofill() {
-    const nomeInput = document.getElementById('nome').value.toUpperCase().trim();
-    const dados = tabelaPrecos[nomeInput];
-    if (dados) {
-        document.getElementById('valor').value = dados.valor;
-        document.getElementById('horas').value = dados.horas;
-    } else {
-        const match = Object.keys(tabelaPrecos).find(key => key.includes(nomeInput));
-        if(match && nomeInput.length > 3) {
-             document.getElementById('valor').value = tabelaPrecos[match].valor;
-             document.getElementById('horas').value = tabelaPrecos[match].horas;
-        }
-    }
+function autoPreencher() {
+  const item = tabelaPrecos.find(i => i.nome === select.value);
+  if (item) {
+    document.getElementById("horas").value = item.horas;
+    document.getElementById("valor").value = item.valor.toFixed(2);
+  }
 }
 
-function addItem(){
-    const item = {
-        om: document.getElementById('om').value,
-        patrimonio: document.getElementById('patrimonio').value,
-        nome: document.getElementById('nome').value,
-        preco: document.getElementById('preco').value,
-        horas: document.getElementById('horas').value,
-        valor: document.getElementById('valor').value,
-        status: document.getElementById('status').value,
-        obs: document.getElementById('obs').value
-    };
-    if(!item.nome) { alert("O nome da máquina é obrigatório."); return; }
-    inventoryData.push(item);
-    saveData();
-    load();
-    clearForm();
+/* RECUPERAÇÃO DA CHAVE - Tenta buscar de todas as versões possíveis */
+let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || 
+                    JSON.parse(localStorage.getItem("oficina_v4")) || 
+                    JSON.parse(localStorage.getItem("oficina_v3")) || [];
+
+function saveData() {
+  // Salva na chave principal que você usava
+  localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
 }
 
-function saveData() { localStorage.setItem('oficina_inventory', JSON.stringify(inventoryData)); }
-function clearForm() {
-    document.getElementById('om').value = '';
-    document.getElementById('patrimonio').value = '';
-    document.getElementById('nome').value = '';
-    document.getElementById('preco').value = '';
-    document.getElementById('horas').value = '';
-    document.getElementById('valor').value = '';
-    document.getElementById('obs').value = '';
+function addItem() {
+  const item = {
+    om: document.getElementById("om").value,
+    patrimonio: document.getElementById("patrimonio").value,
+    nome: select.value,
+    horas: parseFloat(document.getElementById("horas").value) || 0,
+    valor: parseFloat(document.getElementById("valor").value) || 0,
+    status: "Concluído" // Mantendo compatibilidade com seu script anterior
+  };
+  if(!item.om || !item.nome) return alert("OM e Nome são obrigatórios!");
+  inventoryData.push(item);
+  saveData();
+  alert("Item adicionado!");
+  load();
 }
 
-function load(){
-    const tbody = document.getElementById('lista');
-    tbody.innerHTML = '';
-    document.getElementById('selectAll').checked = false;
-    inventoryData.forEach((item, index) => {
-        const tr = document.createElement('tr');
-        const precoFormatado = item.preco ? `R$ ${parseFloat(item.preco).toFixed(2)}` : '-';
-        const valorFormatado = item.valor ? `R$ ${parseFloat(item.valor).toFixed(2)}` : '-';
-        tr.innerHTML = `
-            <td style="text-align: center;"><input type="checkbox" class="row-select" data-index="${index}"></td>
-            <td>${item.om}</td>
-            <td>${item.patrimonio}</td>
-            <td>${item.nome}</td>
-            <td>${precoFormatado}</td>
-            <td>${item.horas}</td>
-            <td>${valorFormatado}</td>
-            <td>${item.status}</td>
-            <td>${item.obs}</td>
-        `;
-        tbody.appendChild(tr);
-    });
-}
+function load() {
+  const termo = document.getElementById("searchInput").value.toLowerCase();
+  const tbody = document.getElementById("lista");
+  tbody.innerHTML = "";
+  let th = 0, tv = 0;
 
-function toggleSelectAll(source) {
-    document.querySelectorAll('.row-select').forEach(cb => cb.checked = source.checked);
-}
-
-function getSelectedData() {
-    const checkboxes = document.querySelectorAll('.row-select:checked');
-    if (checkboxes.length === 0) {
-        if(confirm("Deseja selecionar TODOS os itens?")) return inventoryData;
-        return [];
-    }
-    const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-index')));
-    return inventoryData.filter((_, index) => selectedIndices.includes(index));
+  inventoryData.forEach((i, idx) => {
+    if (termo && !`${i.om} ${i.patrimonio} ${i.nome}`.toLowerCase().includes(termo)) return;
+    th += i.horas; tv += (i.valor || 0);
+    tbody.innerHTML += `<tr>
+      <td><input type="checkbox" class="row-select" data-index="${idx}"></td>
+      <td>${i.om}</td>
+      <td>${i.patrimonio}</td>
+      <td>${i.nome}</td>
+      <td>${i.horas}</td>
+      <td>R$ ${parseFloat(i.valor || 0).toFixed(2)}</td>
+    </tr>`;
+  });
+  document.getElementById("totalHorasEntrada").innerText = th.toFixed(2);
+  document.getElementById("totalValorEntrada").innerText = "R$ " + tv.toFixed(2);
 }
 
 function deleteSelected() {
-    const checkboxes = document.querySelectorAll('.row-select:checked');
-    if (checkboxes.length === 0) return alert("Selecione itens para excluir.");
-    if(!confirm(`Excluir ${checkboxes.length} itens?`)) return;
-    const selectedIndices = Array.from(checkboxes).map(cb => parseInt(cb.getAttribute('data-index'))).sort((a, b) => b - a);
-    selectedIndices.forEach(index => inventoryData.splice(index, 1));
-    saveData();
-    load();
+  const checks = document.querySelectorAll(".row-select:checked");
+  if(!checks.length || !confirm("Excluir itens?")) return;
+  const idxs = Array.from(checks).map(c => parseInt(c.getAttribute('data-index'))).sort((a,b)=>b-a);
+  idxs.forEach(i => inventoryData.splice(i,1));
+  saveData();
+  load();
 }
 
-// --- FUNÇÕES AUXILIARES DE GERAÇÃO (PDF e EXCEL) ---
+function toggleAll(source) {
+  document.querySelectorAll(".row-select").forEach(c => c.checked = source.checked);
+}
+
+// --- GERAÇÃO DE ARQUIVOS (PDF/EXCEL) ---
 
 function generatePDFDoc(data) {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    doc.text("Inventário da Oficina - Remuneração Variável", 14, 15);
-    const tableColumn = ["OM", "Patrimônio", "Nome", "Horas/OM", "Vlr. M.Obra", "Status"];
+    doc.text("Inventário da Oficina - Relatório", 14, 15);
+    const tableColumn = ["OM", "Patrimônio", "Equipamento", "Horas", "Valor"];
     const tableRows = data.map(item => [
-        item.om, item.patrimonio, item.nome, item.horas, 
-        `R$ ${parseFloat(item.valor || 0).toFixed(2)}`, item.status
+        item.om, item.patrimonio, item.nome, item.horas, `R$ ${parseFloat(item.valor || 0).toFixed(2)}`
     ]);
     doc.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
     return doc;
@@ -274,91 +263,55 @@ function generateExcelBlob(data) {
     const worksheet = XLSX.utils.json_to_sheet(data);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Inventário");
-    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'binary' });
-
-    function s2ab(s) {
-        const buf = new ArrayBuffer(s.length);
-        const view = new Uint8Array(buf);
-        for (let i = 0; i < s.length; i++) view[i] = s.charCodeAt(i) & 0xFF;
-        return buf;
-    }
-    const arrayBuffer = s2ab(wbout);
-
-    return new Blob([arrayBuffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+    return new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
 }
 
-// --- FUNÇÕES DE DOWNLOAD (Mantidas para o fallback) ---
-function exportPDF(){
-    const data = getSelectedData();
-    if(data.length === 0) return;
-    const doc = generatePDFDoc(data);
-    doc.save("inventario_oficina.pdf");
-}
-
-function exportExcel(){
-    const data = getSelectedData();
-    if(data.length === 0) return;
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventário");
-    XLSX.writeFile(workbook, "inventario_oficina.xlsx");
-}
-
-// --- FUNÇÃO CORRIGIDA DE COMPARTILHAMENTO ---
+// --- FUNÇÃO DE COMPARTILHAMENTO ---
 async function shareFile(type) {
-    const data = getSelectedData();
-    if(data.length === 0) return;
-
+    if(inventoryData.length === 0) return alert("Não há dados para exportar.");
     let file, filename, mimeType, title, text;
-
     try {
         if (type === 'pdf') {
-            const doc = generatePDFDoc(data);
+            const doc = generatePDFDoc(inventoryData);
             const blob = doc.output('blob');
-            filename = "inventario.pdf";
+            filename = "inventario_oficina.pdf";
             mimeType = "application/pdf";
-            title = 'Inventário da Oficina (PDF)';
-            text = 'Segue em anexo o relatório de inventário em PDF.';
             file = new File([blob], filename, { type: mimeType });
-        } else if (type === 'excel') {
-            const blob = generateExcelBlob(data);
-            filename = "inventario.xlsx";
+        } else {
+            const blob = generateExcelBlob(inventoryData);
+            filename = "inventario_oficina.xlsx";
             mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            title = 'Inventário da Oficina (Excel)';
-            text = 'Segue em anexo o relatório de inventário em formato Excel.';
             file = new File([blob], filename, { type: mimeType });
-        } else {
-            return; 
         }
-
-        // 1. Tenta usar a API de Compartilhamento Nativa (celulares, navegadores modernos)
         if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ title, text, files: [file] });
+            await navigator.share({ title: 'Relatório Oficina', files: [file] });
         } else {
-            // 2. Fallback: Se o compartilhamento nativo falhar (em navegadores de desktop)
-            alert(`ATENÇÃO: Compartilhamento indisponível no seu navegador/dispositivo. Por segurança, navegadores não permitem que o site envie e-mails diretamente com arquivos.\n\nO arquivo (${filename}) será **baixado automaticamente** e você deverá anexá-lo manualmente no seu e-mail.`);
-            
-            if (type === 'pdf') {
-                exportPDF();
-            } else {
-                exportExcel(); // Chama a função de download do Excel
-            }
+            // Fallback download
+            const url = URL.createObjectURL(file);
+            const a = document.createElement("a");
+            a.href = url; a.download = filename; a.click();
         }
-    } catch (error) {
-        // 3. Captura de Erros: Se houver qualquer erro no processo (Ex: usuário cancelou, erro de geração)
-        console.error("Erro ou cancelamento no compartilhamento:", error);
-        alert(`Ocorreu um erro ou o compartilhamento foi cancelado. O arquivo será baixado para que você possa anexá-lo manualmente.`);
-        
-        if (type === 'pdf') {
-            exportPDF();
-        } else {
-            exportExcel();
-        }
-    }
+    } catch (error) { console.error(error); }
 }
 
-// Inicialização
-populateOptions();
+function exportBackupMensal() {
+  const blob = new Blob([JSON.stringify(inventoryData)], {type:"application/json"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "backup_oficina.json";
+  a.click();
+}
+
+function importBackupMensal(e) {
+  const r = new FileReader();
+  r.onload = () => { 
+    inventoryData = JSON.parse(r.result); 
+    saveData(); load(); alert("Backup Restaurado!");
+  };
+  r.readAsText(e.target.files[0]);
+}
+
 load();
 </script>
 </body>
