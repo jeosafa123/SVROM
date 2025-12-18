@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sistema Oficina - Profissional</title>
+<title>Sistema Oficina - Profissional v6</title>
 
 <style>
 /* Estilização Geral */
@@ -38,7 +38,8 @@ button { padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font
 .btn-red { background:#dc2626; color: white; }
 .btn-green { background:#16a34a; color: white; }
 .btn-blue { background:#2563eb; color: white; }
-.btn-share { background:#8b5cf6; color: white; } /* Cor para Compartilhar */
+.btn-share { background:#8b5cf6; color: white; }
+.btn-sync { background:#0ea5e9; color: white; }
 
 /* Tabela */
 table { width:100%; border-collapse:collapse; margin-top:15px; background: #0d1a24; border-radius: 8px; overflow: hidden; }
@@ -71,7 +72,7 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
         <div><label>OM</label><input id="om" placeholder="Ex: 198"></div>
         <div><label>Patrimônio</label><input id="patrimonio" placeholder="Ex: 102030"></div>
       </div>
-      <label>Equipamento (Tabela de Preços)</label>
+      <label>Equipamento (Tabela Automática)</label>
       <select id="nome" onchange="autoPreencher()">
         <option value="">-- Selecione o item --</option>
       </select>
@@ -99,8 +100,9 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
   <div id="tab-inventario" class="tab-content">
     <div class="card">
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;">
-        <button onclick="shareFile('pdf')" class="btn-share">📤 Compartilhar PDF</button>
-        <button onclick="shareFile('excel')" class="btn-share">📤 Compartilhar Excel</button>
+        <button onclick="shareFile('pdf')" class="btn-share">📤 PDF</button>
+        <button onclick="shareFile('excel')" class="btn-share">📤 Excel</button>
+        <button onclick="syncData()" class="btn-sync">☁️ Sincronizar Nuvem</button>
         <button onclick="exportBackupMensal()" class="btn-blue">📥 Backup</button>
         <label class="btn-blue" style="padding: 10px 15px; border-radius: 8px; cursor: pointer;">
           ♻️ Importar <input type="file" accept=".json" hidden onchange="importBackupMensal(event)">
@@ -108,7 +110,7 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
         <button onclick="deleteSelected()" class="btn-red" style="margin-left: auto;">🗑️ Excluir</button>
       </div>
 
-      <input type="text" id="searchInput" placeholder="🔍 Buscar..." onkeyup="load()" style="margin-bottom: 15px; border: 1px solid #2b9cff;">
+      <input type="text" id="searchInput" placeholder="🔍 Pesquisar..." onkeyup="load()" style="margin-bottom: 15px; border: 1px solid #2b9cff;">
 
       <table>
         <thead>
@@ -128,7 +130,7 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
 </div>
 
 <script>
-/* DADOS DO BANCO (IMAGEM) */
+/* DADOS DO BANCO */
 const tabelaPrecos = [
   { nome: "ACABADORA DE SUPERFICIE", valor: 2.00, horas: 5.0 },
   { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
@@ -165,7 +167,6 @@ const tabelaPrecos = [
   { nome: "PERFURATRIZ", valor: 25.00, horas: 6.0 }
 ];
 
-// Iniciar Select
 const select = document.getElementById("nome");
 tabelaPrecos.forEach(i => select.innerHTML += `<option value="${i.nome}">${i.nome}</option>`);
 
@@ -184,6 +185,12 @@ function autoPreencher() {
   }
 }
 
+// INICIALIZAÇÃO DE DADOS
+let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || 
+                    JSON.parse(localStorage.getItem("oficina_v4")) || [];
+  }
+}
+
 /* RECUPERAÇÃO DA CHAVE - Tenta buscar de todas as versões possíveis */
 let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || 
                     JSON.parse(localStorage.getItem("oficina_v4")) || 
@@ -193,6 +200,9 @@ function saveData() {
   // Salva na chave principal que você usava
   localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
 }
+function saveData() {
+  localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
+}
 
 function addItem() {
   const item = {
@@ -200,14 +210,12 @@ function addItem() {
     patrimonio: document.getElementById("patrimonio").value,
     nome: select.value,
     horas: parseFloat(document.getElementById("horas").value) || 0,
-    valor: parseFloat(document.getElementById("valor").value) || 0,
-    status: "Concluído" // Mantendo compatibilidade com seu script anterior
+    valor: parseFloat(document.getElementById("valor").value) || 0
   };
   if(!item.om || !item.nome) return alert("OM e Nome são obrigatórios!");
   inventoryData.push(item);
-  saveData();
-  alert("Item adicionado!");
-  load();
+  saveData(); load();
+  alert("Item salvo!");
 }
 
 function load() {
@@ -232,83 +240,91 @@ function load() {
   document.getElementById("totalValorEntrada").innerText = "R$ " + tv.toFixed(2);
 }
 
+// SINCRONIZAÇÃO INTELIGENTE
+async function syncData() {
+    let savedCode = localStorage.getItem("sync_code_oficina");
+    const mode = confirm("Deseja: \n[OK] ENVIAR para a nuvem \n[Cancelar] BAIXAR da nuvem");
+
+    if (mode) {
+        try {
+            const url = savedCode ? `https://api.jsonbin.io/v3/b/${savedCode}` : 'https://api.jsonbin.io/v3/b';
+            const method = savedCode ? 'PUT' : 'POST';
+            
+            const res = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json', 'X-Bin-Private': 'false' },
+                body: JSON.stringify(inventoryData)
+            });
+            const data = await res.json();
+            const binId = savedCode || data.metadata.id;
+            
+            localStorage.setItem("sync_code_oficina", binId);
+            prompt("Sincronizado! Código salvo neste aparelho:", binId);
+        } catch (e) { alert("Erro ao sincronizar. Verifique a internet."); }
+    } else {
+        const code = prompt("Digite o CÓDIGO de sincronização:", savedCode || "");
+        if (!code) return;
+        try {
+            const res = await fetch(`https://api.jsonbin.io/v3/b/${code}/latest`);
+            const data = await res.json();
+            if (confirm("Dados encontrados! Substituir lista atual?")) {
+                inventoryData = data.record;
+                localStorage.setItem("sync_code_oficina", code);
+                saveData(); load(); alert("Dados baixados com sucesso!");
+            }
+        } catch (e) { alert("Código inválido ou expirado."); }
+    }
+}
+
 function deleteSelected() {
   const checks = document.querySelectorAll(".row-select:checked");
-  if(!checks.length || !confirm("Excluir itens?")) return;
+  if(!checks.length || !confirm("Excluir?")) return;
   const idxs = Array.from(checks).map(c => parseInt(c.getAttribute('data-index'))).sort((a,b)=>b-a);
   idxs.forEach(i => inventoryData.splice(i,1));
-  saveData();
-  load();
+  saveData(); load();
 }
 
 function toggleAll(source) {
   document.querySelectorAll(".row-select").forEach(c => c.checked = source.checked);
 }
 
-// --- GERAÇÃO DE ARQUIVOS (PDF/EXCEL) ---
-
-function generatePDFDoc(data) {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.text("Inventário da Oficina - Relatório", 14, 15);
-    const tableColumn = ["OM", "Patrimônio", "Equipamento", "Horas", "Valor"];
-    const tableRows = data.map(item => [
-        item.om, item.patrimonio, item.nome, item.horas, `R$ ${parseFloat(item.valor || 0).toFixed(2)}`
-    ]);
-    doc.autoTable({ head: [tableColumn], body: tableRows, startY: 20 });
-    return doc;
-}
-
-function generateExcelBlob(data) {
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Inventário");
-    const wbout = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-    return new Blob([wbout], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
-}
-
-// --- FUNÇÃO DE COMPARTILHAMENTO ---
+// COMPARTILHAMENTO
 async function shareFile(type) {
-    if(inventoryData.length === 0) return alert("Não há dados para exportar.");
-    let file, filename, mimeType, title, text;
-    try {
-        if (type === 'pdf') {
-            const doc = generatePDFDoc(inventoryData);
-            const blob = doc.output('blob');
-            filename = "inventario_oficina.pdf";
-            mimeType = "application/pdf";
-            file = new File([blob], filename, { type: mimeType });
-        } else {
-            const blob = generateExcelBlob(inventoryData);
-            filename = "inventario_oficina.xlsx";
-            mimeType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
-            file = new File([blob], filename, { type: mimeType });
-        }
-        if (navigator.canShare && navigator.canShare({ files: [file] })) {
-            await navigator.share({ title: 'Relatório Oficina', files: [file] });
-        } else {
-            // Fallback download
-            const url = URL.createObjectURL(file);
-            const a = document.createElement("a");
-            a.href = url; a.download = filename; a.click();
-        }
-    } catch (error) { console.error(error); }
+    if(!inventoryData.length) return alert("Lista vazia.");
+    let file, filename;
+    if (type === 'pdf') {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        doc.text("Relatorio Oficina", 14, 15);
+        const rows = inventoryData.map(i => [i.om, i.patrimonio, i.nome, i.horas, i.valor.toFixed(2)]);
+        doc.autoTable({ head: [["OM","Patr.","Nome","Hrs","Valor"]], body: rows, startY: 20 });
+        file = new File([doc.output('blob')], "relatorio.pdf", { type: "application/pdf" });
+        filename = "relatorio.pdf";
+    } else {
+        const ws = XLSX.utils.json_to_sheet(inventoryData);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Dados");
+        const out = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+        file = new File([out], "relatorio.xlsx", { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+        filename = "relatorio.xlsx";
+    }
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Relatorio Oficina' });
+    } else {
+        const a = document.createElement("a");
+        a.href = URL.createObjectURL(file); a.download = filename; a.click();
+    }
 }
 
 function exportBackupMensal() {
-  const blob = new Blob([JSON.stringify(inventoryData)], {type:"application/json"});
+  const b = new Blob([JSON.stringify(inventoryData)], {type:"application/json"});
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "backup_oficina.json";
-  a.click();
+  a.href = URL.createObjectURL(b); a.download = "backup.json"; a.click();
 }
 
 function importBackupMensal(e) {
   const r = new FileReader();
-  r.onload = () => { 
-    inventoryData = JSON.parse(r.result); 
-    saveData(); load(); alert("Backup Restaurado!");
-  };
+  r.onload = () => { inventoryData = JSON.parse(r.result); saveData(); load(); };
   r.readAsText(e.target.files[0]);
 }
 
