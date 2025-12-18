@@ -188,18 +188,7 @@ function autoPreencher() {
 // INICIALIZAÇÃO DE DADOS
 let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || 
                     JSON.parse(localStorage.getItem("oficina_v4")) || [];
-  }
-}
 
-/* RECUPERAÇÃO DA CHAVE - Tenta buscar de todas as versões possíveis */
-let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || 
-                    JSON.parse(localStorage.getItem("oficina_v4")) || 
-                    JSON.parse(localStorage.getItem("oficina_v3")) || [];
-
-function saveData() {
-  // Salva na chave principal que você usava
-  localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-}
 function saveData() {
   localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
 }
@@ -331,4 +320,4 @@ function importBackupMensal(e) {
 load();
 </script>
 </body>
-</html>
+          </html>
