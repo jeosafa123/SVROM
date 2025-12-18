@@ -1,3 +1,4 @@
+
 <!doctype html>
 <html lang="pt-BR">
 <head>
@@ -61,8 +62,8 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
   <h1>Gestão Oficina Mecânica</h1>
 
   <div class="tab-container">
-    <button class="tab-button active" onclick="openTab('tab-entrada')">📝 Lançamento</button>
-    <button class="tab-button" onclick="openTab('tab-inventario')">📋 Banco de Dados</button>
+    <button class="tab-button active" onclick="openTab('tab-entrada', this)">📝 Lançamento</button>
+    <button class="tab-button" onclick="openTab('tab-inventario', this)">📋 Banco de Dados</button>
   </div>
 
   <div id="tab-entrada" class="tab-content active">
@@ -170,11 +171,11 @@ const tabelaPrecos = [
 const select = document.getElementById("nome");
 tabelaPrecos.forEach(i => select.innerHTML += `<option value="${i.nome}">${i.nome}</option>`);
 
-function openTab(tabId) {
+function openTab(tabId, btn) {
   document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
   document.querySelectorAll('.tab-button').forEach(tb => tb.classList.remove('active'));
   document.getElementById(tabId).classList.add('active');
-  event.currentTarget.classList.add('active');
+  if (btn) btn.classList.add('active');
 }
 
 function autoPreencher() {
@@ -185,21 +186,30 @@ function autoPreencher() {
   }
 }
 
-// INICIALIZAÇÃO DE DADOS
-let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || 
-                    JSON.parse(localStorage.getItem("oficina_v4")) || [];
+// INICIALIZAÇÃO DE DADOS (carrega e normaliza)
+let inventoryDataRaw = JSON.parse(localStorage.getItem("oficina_inventory")) ||
+                       JSON.parse(localStorage.getItem("oficina_v4")) || [];
+// Normaliza registros para garantir tipos corretos
+let inventoryData = (inventoryDataRaw || []).map(i => ({
+  om: i?.om || '',
+  patrimonio: i?.patrimonio || '',
+  nome: i?.nome || '',
+  horas: Number(i?.horas) || 0,
+  valor: Number(i?.valor) || 0
+}));
 
+// Salva dados normalizados
 function saveData() {
   localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
 }
 
 function addItem() {
   const item = {
-    om: document.getElementById("om").value,
-    patrimonio: document.getElementById("patrimonio").value,
-    nome: select.value,
-    horas: parseFloat(document.getElementById("horas").value) || 0,
-    valor: parseFloat(document.getElementById("valor").value) || 0
+    om: (document.getElementById("om").value || '').toString(),
+    patrimonio: (document.getElementById("patrimonio").value || '').toString(),
+    nome: select.value || '',
+    horas: Number(document.getElementById("horas").value) || 0,
+    valor: Number(document.getElementById("valor").value) || 0
   };
 
   // Verificação de dados obrigatórios
@@ -223,12 +233,13 @@ function load() {
     // Filtra os itens com base no termo de busca
     if (termo && !`${i.om} ${i.patrimonio} ${i.nome}`.toLowerCase().includes(termo)) return;
 
-    // Processa horas e valores acumulados
-    if (i.horas && i.valor) {
-      th += i.horas;
-      tv += i.valor;
-    } else {
-      console.warn("Registro inválido encontrado:", i);
+    // Processa horas e valores acumulados (horas somam; valor total = horas * valorUnit)
+    const horasNum = Number(i.horas) || 0;
+    const valorUnit = Number(i.valor) || 0;
+    th += horasNum;
+    tv += horasNum * valorUnit;
+    if (!i.nome && !i.om && !i.patrimonio) {
+      console.warn("Registro possivelmente inválido encontrado:", i);
     }
 
     tbody.innerHTML += `<tr>
@@ -236,8 +247,8 @@ function load() {
       <td>${i.om}</td>
       <td>${i.patrimonio}</td>
       <td>${i.nome}</td>
-      <td>${i.horas}</td>
-      <td>R$ ${parseFloat(i.valor || 0).toFixed(2)}</td>
+      <td>${(Number(i.horas) || 0).toFixed(2)}</td>
+      <td>R$ ${Number(i.valor || 0).toFixed(2)}</td>
     </tr>`;
   });
 
@@ -260,7 +271,109 @@ function toggleAll(source) {
   document.querySelectorAll(".row-select").forEach(c => c.checked = source.checked);
 }
 
+/* ------------------ FUNÇÕES DE EXPORTAÇÃO E UTILITÁRIOS ------------------ */
+function shareFile(type) {
+  if (type === 'pdf') return generatePDF();
+  if (type === 'excel') return generateExcel();
+  alert('Formato não suportado: ' + type);
+}
+
+async function generatePDF() {
+  try {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.setFontSize(14);
+    doc.text('Inventário - Oficina', 14, 12);
+
+    const head = [['OM', 'Patrimônio', 'Equipamento', 'Horas', 'Valor (R$)']];
+    const body = inventoryData.map(i => [
+      i.om || '',
+      i.patrimonio || '',
+      i.nome || '',
+      (Number(i.horas) || 0).toFixed(2),
+      (Number(i.valor) || 0).toFixed(2)
+    ]);
+
+    doc.autoTable({ head, body, startY: 18, styles: { fontSize: 9 } });
+
+    const pdfBlob = doc.output('blob');
+    const file = new File([pdfBlob], 'inventario.pdf', { type: 'application/pdf' });
+
+    // Tenta compartilhar (mobile). Se não, faz o download.
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'Inventário' });
+        return;
+      }
+    } catch (e) {
+      console.warn('navigator.share falhou para PDF:', e);
+    }
+
+    const url = URL.createObjectURL(pdfBlob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'inventario.pdf';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('Erro ao gerar PDF:', err);
+    alert('Erro ao gerar PDF. Veja console para detalhes.');
+  }
+}
+
+function generateExcel() {
+  try {
+    const ws_data = [
+      ['OM', 'Patrimônio', 'Equipamento', 'Horas', 'Valor (R$)'],
+      ...inventoryData.map(i => [
+        i.om || '',
+        i.patrimonio || '',
+        i.nome || '',
+        Number(i.horas) || 0,
+        Number(i.valor) || 0
+      ])
+    ];
+
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.aoa_to_sheet(ws_data);
+    XLSX.utils.book_append_sheet(wb, ws, 'Inventário');
+
+    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const file = new File([blob], 'inventario.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        navigator.share({ files: [file], title: 'Inventário' });
+        return;
+      }
+    } catch (e) {
+      console.warn('navigator.share falhou para Excel:', e);
+    }
+
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'inventario.xlsx';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (err) {
+    console.error('Erro ao gerar Excel:', err);
+    alert('Erro ao gerar Excel. Veja console para detalhes.');
+  }
+}
+
+// Stubs para funções referenciadas no HTML (implemente conforme necessário)
+function syncData() { alert('syncData() não implementada ainda.'); }
+function exportBackupMensal() { alert('exportBackupMensal() não implementada ainda.'); }
+function importBackupMensal(event) { alert('importBackupMensal() não implementada ainda.'); }
+
+// Carrega a tabela na inicialização
 load();
 </script>
 </body>
-          </html>
+</html>
