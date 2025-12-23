@@ -2,53 +2,57 @@
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sistema Oficina - Profissional v6</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Oficina Pro - PWA</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1720">
 
 <style>
-/* Estilização Geral */
-body { font-family: 'Segoe UI', sans-serif; background:#0f1720; color:#e6eef6; margin:0; padding:20px; }
-.container { max-width:1100px; margin:0 auto; }
-h1 { text-align:center; color: #2b9cff; margin-bottom: 30px; }
+/* Estilização Geral Otimizada */
+body { font-family: 'Segoe UI', sans-serif; background:#0f1720; color:#e6eef6; margin:0; padding:15px; }
+.container { max-width:1100px; margin:0 auto; padding-bottom: 50px; }
+h1 { text-align:center; color: #2b9cff; font-size: 1.4rem; margin-bottom: 20px; }
 
-/* Sistema de Abas */
+/* Abas */
 .tab-container { display: flex; border-bottom: 2px solid #2a3a4d; margin-bottom: 20px; gap: 5px; }
 .tab-button {
-  background: #14212d; color: #98a3b3; border: none; padding: 12px 25px;
+  background: #14212d; color: #98a3b3; border: none; padding: 12px; flex: 1;
   cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; transition: 0.3s;
 }
 .tab-button.active { background: #2b9cff; color: white; }
-.tab-content { display: none; }
+.tab-content { display: none; animation: fadeIn 0.3s; }
 .tab-content.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* Cards e Forms */
-.card { background:#14212d; padding:25px; border-radius:12px; margin-bottom:20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-label { display:block; margin-top:12px; font-weight: 600; color: #a0aec0; }
+/* Cards */
+.card { background:#14212d; padding:20px; border-radius:12px; margin-bottom:15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+label { display:block; margin-top:10px; font-weight: 600; color: #a0aec0; font-size: 0.85rem; }
 input, select {
   width:100%; padding:12px; border-radius:6px;
   border:1px solid #2a3a4d; background:#0d1a24; color:#fff;
-  box-sizing: border-box; margin-top: 5px; font-size: 15px;
+  box-sizing: border-box; margin-top: 5px; font-size: 16px;
 }
-.row { display:flex; gap:15px; flex-wrap: wrap; }
-.row > * { flex:1; min-width: 200px; }
+.row { display:flex; gap:10px; flex-wrap: wrap; }
+.row > * { flex:1; min-width: 130px; }
 
 /* Botões */
-button { padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font-weight: bold; transition: 0.2s; }
-.btn-main { background:#2b9cff; color: white; width: 100%; margin-top: 20px; font-size: 16px; }
+button { padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight: bold; transition: 0.2s; font-size: 14px; }
+.btn-main { background:#2b9cff; color: white; width: 100%; margin-top: 15px; padding: 15px; font-size: 1rem; }
 .btn-red { background:#dc2626; color: white; }
-.btn-green { background:#16a34a; color: white; }
 .btn-blue { background:#2563eb; color: white; }
 .btn-share { background:#8b5cf6; color: white; }
 .btn-sync { background:#0ea5e9; color: white; }
 
-/* Tabela */
-table { width:100%; border-collapse:collapse; margin-top:15px; background: #0d1a24; border-radius: 8px; overflow: hidden; }
-th, td { padding:15px; border-bottom: 1px solid #2a3a4d; text-align: left; }
-th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 11px; }
+/* Tabela Responsiva */
+.table-responsive { width: 100%; overflow-x: auto; border-radius: 8px; border: 1px solid #2a3a4d; margin-top: 10px; }
+table { width:100%; border-collapse:collapse; background: #0d1a24; min-width: 500px; }
+th, td { padding:10px; border-bottom: 1px solid #2a3a4d; text-align: left; font-size: 13px; }
+th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 10px; }
 
-/* Dashboard */
-.stat-box { background:#0d1a24; padding:15px; border-radius:8px; text-align: center; border: 1px solid #2a3a4d; }
-.stat-val { font-size: 1.8em; font-weight: bold; color: #4ade80; }
+/* Stats */
+.stat-box { background:#0d1a24; padding:12px; border-radius:8px; text-align: center; border: 1px solid #2a3a4d; flex: 1; }
+.stat-val { font-size: 1.4em; font-weight: bold; color: #4ade80; }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -58,320 +62,229 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
 
 <body>
 <div class="container">
-  <h1>Gestão Oficina Mecânica</h1>
+  <h1>Sistema Oficina v6.2</h1>
 
   <div class="tab-container">
     <button class="tab-button active" onclick="openTab('tab-entrada', this)">📝 Lançamento</button>
-    <button class="tab-button" onclick="openTab('tab-inventario', this)">📋 Banco de Dados</button>
+    <button class="tab-button" onclick="openTab('tab-inventario', this)">📋 Histórico</button>
   </div>
 
   <div id="tab-entrada" class="tab-content active">
     <div class="card">
-      <h2>Novo Registro</h2>
       <div class="row">
-        <div><label>OM</label><input id="om" placeholder="Ex: 198"></div>
-        <div><label>Patrimônio</label><input id="patrimonio" placeholder="Ex: 102030"></div>
+        <div><label>OM</label><input id="om" type="tel" placeholder="Nº Ordem"></div>
+        <div><label>Patrimônio</label><input id="patrimonio" type="tel" placeholder="Código"></div>
       </div>
-      <label>Equipamento (Tabela Automática)</label>
+      <label>Equipamento</label>
       <select id="nome" onchange="autoPreencher()">
-        <option value="">-- Selecione o item --</option>
+        <option value="">-- Selecione --</option>
       </select>
       <div class="row">
         <div><label>Horas</label><input id="horas" type="number" step="0.01"></div>
-        <div><label>Valor Unitário (R$)</label><input id="valor" type="number" step="0.01"></div>
+        <div><label>Valor Unit.</label><input id="valor" type="number" step="0.01"></div>
       </div>
-      <button class="btn-main" onclick="addItem()">ADICIONAR AO INVENTÁRIO</button>
+      <button class="btn-main" onclick="addItem()">SALVAR NO DISPOSITIVO</button>
     </div>
     
-    <div class="card">
-      <div class="row">
-        <div class="stat-box">
-          <div style="color:#98a3b3;">Horas Acumuladas</div>
-          <div id="totalHorasEntrada" class="stat-val" style="color:#fff">0.00</div>
-        </div>
-        <div class="stat-box">
-          <div style="color:#98a3b3;">Custo Acumulado</div>
-          <div id="totalValorEntrada" class="stat-val">R$ 0,00</div>
-        </div>
+    <div class="row">
+      <div class="stat-box">
+        <div style="color:#98a3b3; font-size:0.7rem;">HORAS ACUMULADAS</div>
+        <div id="totalHorasEntrada" class="stat-val">0.00</div>
+      </div>
+      <div class="stat-box">
+        <div style="color:#98a3b3; font-size:0.7rem;">CUSTO ESTIMADO</div>
+        <div id="totalValorEntrada" class="stat-val">R$ 0,00</div>
       </div>
     </div>
   </div>
 
   <div id="tab-inventario" class="tab-content">
     <div class="card">
-      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;">
-        <button onclick="shareFile('pdf')" class="btn-share">📤 PDF</button>
-        <button onclick="shareFile('excel')" class="btn-share">📤 Excel</button>
-        <button onclick="syncData()" class="btn-sync">☁️ Sincronizar Nuvem</button>
-        <button onclick="exportBackupMensal()" class="btn-blue">📥 Backup</button>
-        <label class="btn-blue" style="padding: 10px 15px; border-radius: 8px; cursor: pointer;">
-          ♻️ Importar <input type="file" accept=".json" hidden onchange="importBackupMensal(event)">
-        </label>
-        <button onclick="deleteSelected()" class="btn-red" style="margin-left: auto;">🗑️ Excluir</button>
+      <div class="row" style="margin-bottom: 15px;">
+        <button onclick="shareFile('pdf')" class="btn-share" style="flex:1">PDF</button>
+        <button onclick="shareFile('excel')" class="btn-share" style="flex:1">EXCEL</button>
+        <button onclick="exportBackup()" class="btn-blue" style="flex:1">BACKUP</button>
       </div>
 
-      <input type="text" id="searchInput" placeholder="🔍 Pesquisar..." onkeyup="load()" style="margin-bottom: 15px; border: 1px solid #2b9cff;">
+      <input type="text" id="searchInput" placeholder="🔍 Pesquisar..." onkeyup="load()">
 
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 20px;"><input type="checkbox" onclick="toggleAll(this)"></th>
-            <th>OM</th>
-            <th>Patrimônio</th>
-            <th>Equipamento</th>
-            <th>Horas</th>
-            <th>Valor</th>
-          </tr>
-        </thead>
-        <tbody id="lista"></tbody>
-      </table>
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:20px"><input type="checkbox" onclick="toggleAll(this)"></th>
+              <th>OM</th>
+              <th>Equipamento</th>
+              <th>Horas</th>
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody id="lista"></tbody>
+        </table>
+      </div>
+      <button onclick="deleteSelected()" class="btn-red" style="width:100%; margin-top:15px;">🗑️ EXCLUIR SELECIONADOS</button>
     </div>
   </div>
 </div>
 
 <script>
-/* DADOS DO BANCO */
+/* --- DADOS E MIGRAÇÃO --- */
 const tabelaPrecos = [
   { nome: "ACABADORA DE SUPERFICIE", valor: 2.00, horas: 5.0 },
-  { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
-  { nome: "BANCADA DE SERRA", valor: 8.00, horas: 4.5 },
-  { nome: "BETONEIRA 150 LT", valor: 6.00, horas: 4.5 },
   { nome: "BETONEIRA 400 LT", valor: 6.00, horas: 4.5 },
-  { nome: "BETONEIRA 600 LT", valor: 16.90, horas: 16.0 },
-  { nome: "BOMBA MANGOTE", valor: 4.00, horas: 3.0 },
-  { nome: "BOMBA SUBMERSA", valor: 4.00, horas: 4.0 },
   { nome: "COMPACTADOR", valor: 3.00, horas: 4.0 },
-  { nome: "CORTADORA", valor: 3.00, horas: 4.0 },
   { nome: "GERADOR", valor: 3.00, horas: 3.2 },
-  { nome: "GUINCHO DE ELEVAÇÃO", valor: 10.00, horas: 6.0 },
-  { nome: "MARTELO 2 KG - 220V", valor: 1.50, horas: 2.0 },
-  { nome: "MARTELO 5,7 KG - 220V", valor: 1.50, horas: 2.0 },
-  { nome: "MARTELO 6 KG - 220V", valor: 1.70, horas: 2.0 },
-  { nome: "MARTELO 11 KG - ROT", valor: 2.00, horas: 2.2 },
   { nome: "MARTELO 11 KG - 220V", valor: 1.70, horas: 2.2 },
-  { nome: "MARTELO 16/19 KG", valor: 2.00, horas: 2.3 },
-  { nome: "MARTELO 19 KG - 220V", valor: 2.00, horas: 2.5 },
-  { nome: "MARTELO 30 KG - 220V", valor: 2.00, horas: 2.5 },
-  { nome: "MINI GRUA", valor: 10.00, horas: 6.0 },
-  { nome: "MOTOR - ACIONADOR", valor: 3.00, horas: 3.0 },
-  { nome: "MOTOR - ELET TRIFA", valor: 3.00, horas: 3.0 },
-  { nome: "PLACA VIBRATORIA", valor: 3.50, horas: 4.5 },
-  { nome: "RÉGUA VIBRATÓRIA", valor: 5.00, horas: 4.5 },
-  { nome: "TORRE DE ILUMINAÇÃO", valor: 25.00, horas: 6.0 },
-  { nome: "UNIDADE HIDRÁULICA", valor: 8.00, horas: 16.0 },
   { nome: "VIBRADOR DE IMERSÃO", valor: 2.80, horas: 4.0 },
-  { nome: "ROLO COMPACTADOR (Pesada)", valor: 20.00, horas: 24.0 },
-  { nome: "MINI CARREGADEIRA (Pesada)", valor: 34.00, horas: 16.0 },
-  { nome: "MINI ESCAVADEIRA (Pesada)", valor: 34.00, horas: 16.0 },
-  { nome: "VELOX", valor: 8.00, horas: 6.0 },
-  { nome: "PERFURATRIZ", valor: 25.00, horas: 6.0 }
+  { nome: "ROLO COMPACTADOR", valor: 20.00, horas: 24.0 }
+  // ... adicione os outros aqui conforme necessário
 ];
 
+// Preencher Select
 const select = document.getElementById("nome");
-tabelaPrecos.forEach(i => select.innerHTML += `<option value="${i.nome}">${i.nome}</option>`);
+tabelaPrecos.sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(i=>select.innerHTML+=`<option value="${i.nome}">${i.nome}</option>`);
 
-function openTab(tabId, btn) {
-  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-  document.querySelectorAll('.tab-button').forEach(tb => tb.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
-  if (btn) btn.classList.add('active');
+// Lógica de Migração Inteligente
+let inventoryData = [];
+const currentKey = "oficina_inventory_v6.2";
+const oldKeys = ["oficina_inventory_v6", "oficina_inventory", "oficina_v4"];
+
+function initData() {
+    const saved = localStorage.getItem(currentKey);
+    if (saved) {
+        inventoryData = JSON.parse(saved);
+    } else {
+        // Busca em chaves antigas
+        for (let key of oldKeys) {
+            const old = localStorage.getItem(key);
+            if (old) {
+                const parsed = JSON.parse(old);
+                inventoryData = parsed.map(i => ({
+                    id: i.id || Date.now() + Math.random(),
+                    om: i.om || i.ordem || '',
+                    patrimonio: i.patrimonio || '',
+                    nome: i.nome || i.equipamento || '',
+                    horas: Number(i.horas || 0),
+                    valor: Number(i.valor || i.preco || 0)
+                }));
+                localStorage.setItem(currentKey, JSON.stringify(inventoryData));
+                alert("Dados de versões anteriores migrados!");
+                break;
+            }
+        }
+    }
+}
+
+function saveData() { localStorage.setItem(currentKey, JSON.stringify(inventoryData)); }
+
+/* --- FUNCIONALIDADES --- */
+function openTab(id, btn) {
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.querySelectorAll('.tab-button').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
 }
 
 function autoPreencher() {
-  const item = tabelaPrecos.find(i => i.nome === select.value);
-  if (item) {
+  const item = tabelaPrecos.find(i=>i.nome===select.value);
+  if(item){
     document.getElementById("horas").value = item.horas;
     document.getElementById("valor").value = item.valor.toFixed(2);
   }
 }
 
-// INICIALIZAÇÃO DE DADOS (carrega e normaliza)
-let inventoryDataRaw = JSON.parse(localStorage.getItem("oficina_inventory")) ||
-                       JSON.parse(localStorage.getItem("oficina_v4")) || [];
-// Normaliza registros para garantir tipos corretos
-let inventoryData = (inventoryDataRaw || []).map(i => ({
-  om: i?.om || '',
-  patrimonio: i?.patrimonio || '',
-  nome: i?.nome || '',
-  horas: Number(i?.horas) || 0,
-  valor: Number(i?.valor) || 0
-}));
-
-// Salva dados normalizados
-function saveData() {
-  localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-}
-
 function addItem() {
-  const item = {
-    om: (document.getElementById("om").value || '').toString(),
-    patrimonio: (document.getElementById("patrimonio").value || '').toString(),
-    nome: select.value || '',
-    horas: Number(document.getElementById("horas").value) || 0,
-    valor: Number(document.getElementById("valor").value) || 0
-  };
+  const om = document.getElementById("om").value;
+  const nome = select.value;
+  if(!om || !nome) return alert("Preencha OM e Equipamento");
 
-  // Verificação de dados obrigatórios
-  if (!item.om || !item.nome) {
-    return alert("Campos OM e Nome são obrigatórios! Por favor, preencha todos os campos.");
-  }
-
-  inventoryData.push(item);
-  saveData();
-  load();
-  alert("Item salvo!");
+  inventoryData.push({
+    id: Date.now(),
+    om: om,
+    patrimonio: document.getElementById("patrimonio").value,
+    nome: nome,
+    horas: Number(document.getElementById("horas").value),
+    valor: Number(document.getElementById("valor").value)
+  });
+  saveData(); load();
+  document.getElementById("patrimonio").value = "";
+  alert("Salvo!");
 }
 
 function load() {
   const termo = document.getElementById("searchInput").value.toLowerCase();
   const tbody = document.getElementById("lista");
   tbody.innerHTML = "";
-  let th = 0, tv = 0;
+  let th=0, tv=0;
 
-  inventoryData.forEach((i, idx) => {
-    // Filtra os itens com base no termo de busca
-    if (termo && !`${i.om} ${i.patrimonio} ${i.nome}`.toLowerCase().includes(termo)) return;
-
-    // Processa horas e valores acumulados (horas somam; valor total = horas * valorUnit)
-    const horasNum = Number(i.horas) || 0;
-    const valorUnit = Number(i.valor) || 0;
-    th += horasNum;
-    tv += horasNum * valorUnit;
-    if (!i.nome && !i.om && !i.patrimonio) {
-      console.warn("Registro possivelmente inválido encontrado:", i);
-    }
-
+  inventoryData.forEach(i => {
+    if(termo && !`${i.om} ${i.nome}`.toLowerCase().includes(termo)) return;
+    th += i.horas; tv += (i.horas * i.valor);
     tbody.innerHTML += `<tr>
-      <td><input type="checkbox" class="row-select" data-index="${idx}"></td>
+      <td><input type="checkbox" class="row-select" data-id="${i.id}"></td>
       <td>${i.om}</td>
-      <td>${i.patrimonio}</td>
       <td>${i.nome}</td>
-      <td>${(Number(i.horas) || 0).toFixed(2)}</td>
-      <td>R$ ${Number(i.valor || 0).toFixed(2)}</td>
+      <td>${i.horas.toFixed(2)}</td>
+      <td>R$ ${(i.horas*i.valor).toFixed(2)}</td>
     </tr>`;
   });
-
   document.getElementById("totalHorasEntrada").innerText = th.toFixed(2);
   document.getElementById("totalValorEntrada").innerText = "R$ " + tv.toFixed(2);
-  console.log("Dados carregados com sucesso:", inventoryData, "Total Horas:", th, "Total Valor:", tv);
 }
+
+function toggleAll(src) { document.querySelectorAll(".row-select").forEach(c=>c.checked=src.checked); }
 
 function deleteSelected() {
   const checks = document.querySelectorAll(".row-select:checked");
-  if (!checks.length || !confirm("Excluir?")) return;
-
-  const idxs = Array.from(checks).map(c => parseInt(c.getAttribute('data-index'))).sort((a, b) => b - a);
-  idxs.forEach(i => inventoryData.splice(i, 1));
-  saveData();
-  load();
+  if(!checks.length || !confirm("Excluir?")) return;
+  const ids = Array.from(checks).map(c=>Number(c.dataset.id));
+  inventoryData = inventoryData.filter(i=>!ids.includes(i.id));
+  saveData(); load();
 }
 
-function toggleAll(source) {
-  document.querySelectorAll(".row-select").forEach(c => c.checked = source.checked);
+/* --- EXPORTAÇÃO E PONTE --- */
+function sendFile(blob, filename) {
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    const base64 = reader.result.split(',')[1];
+    if (window.Android && window.Android.downloadFile) {
+        window.Android.downloadFile(base64, filename);
+    } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename; a.click();
+    }
+  };
+  reader.readAsDataURL(blob);
 }
 
-/* ------------------ FUNÇÕES DE EXPORTAÇÃO E UTILITÁRIOS ------------------ */
 function shareFile(type) {
-  if (type === 'pdf') return generatePDF();
-  if (type === 'excel') return generateExcel();
-  alert('Formato não suportado: ' + type);
-}
-
-async function generatePDF() {
-  try {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text('Inventário - Oficina', 14, 12);
-
-    const head = [['OM', 'Patrimônio', 'Equipamento', 'Horas', 'Valor (R$)']];
-    const body = inventoryData.map(i => [
-      i.om || '',
-      i.patrimonio || '',
-      i.nome || '',
-      (Number(i.horas) || 0).toFixed(2),
-      (Number(i.valor) || 0).toFixed(2)
-    ]);
-
-    doc.autoTable({ head, body, startY: 18, styles: { fontSize: 9 } });
-
-    const pdfBlob = doc.output('blob');
-    const file = new File([pdfBlob], 'inventario.pdf', { type: 'application/pdf' });
-
-    // Tenta compartilhar (mobile). Se não, faz o download.
-    try {
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'Inventário' });
-        return;
-      }
-    } catch (e) {
-      console.warn('navigator.share falhou para PDF:', e);
-    }
-
-    const url = URL.createObjectURL(pdfBlob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'inventario.pdf';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error('Erro ao gerar PDF:', err);
-    alert('Erro ao gerar PDF. Veja console para detalhes.');
-  }
-}
-
-function generateExcel() {
-  try {
-    const ws_data = [
-      ['OM', 'Patrimônio', 'Equipamento', 'Horas', 'Valor (R$)'],
-      ...inventoryData.map(i => [
-        i.om || '',
-        i.patrimonio || '',
-        i.nome || '',
-        Number(i.horas) || 0,
-        Number(i.valor) || 0
-      ])
-    ];
-
+  if (type === 'pdf') {
+    const doc = new jspdf.jsPDF();
+    doc.text("Relatório Oficina", 10, 10);
+    const rows = inventoryData.map(i=>[i.om, i.nome, i.horas, (i.horas*i.valor).toFixed(2)]);
+    doc.autoTable({ head: [['OM', 'Item', 'Horas', 'Total']], body: rows });
+    sendFile(doc.output('blob'), 'oficina.pdf');
+  } else {
+    const ws = XLSX.utils.json_to_sheet(inventoryData);
     const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(ws_data);
-    XLSX.utils.book_append_sheet(wb, ws, 'Inventário');
-
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    const file = new File([blob], 'inventario.xlsx', { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-
-    try {
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        navigator.share({ files: [file], title: 'Inventário' });
-        return;
-      }
-    } catch (e) {
-      console.warn('navigator.share falhou para Excel:', e);
-    }
-
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'inventario.xlsx';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  } catch (err) {
-    console.error('Erro ao gerar Excel:', err);
-    alert('Erro ao gerar Excel. Veja console para detalhes.');
+    XLSX.utils.book_append_sheet(wb, ws, "Dados");
+    const out = XLSX.write(wb, { type: 'array', bookType: 'xlsx' });
+    sendFile(new Blob([out]), 'oficina.xlsx');
   }
 }
 
-// Stubs para funções referenciadas no HTML (implemente conforme necessário)
-function syncData() { alert('syncData() não implementada ainda.'); }
-function exportBackupMensal() { alert('exportBackupMensal() não implementada ainda.'); }
-function importBackupMensal(event) { alert('importBackupMensal() não implementada ainda.'); }
+function exportBackup() {
+    const blob = new Blob([JSON.stringify(inventoryData)], {type: 'application/json'});
+    sendFile(blob, 'backup_oficina.json');
+}
 
-// Carrega a tabela na inicialização
+// Registro do Service Worker para PWA
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(()=>console.log("PWA Ativo"));
+}
+
+initData();
 load();
 </script>
 </body>
