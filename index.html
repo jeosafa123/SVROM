@@ -130,13 +130,204 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
 <script>
 /* --- DADOS E MIGRAÇÃO --- */
 const tabelaPrecos = [
+  ML
+
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Sistema Oficina - Profissional v6.1</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0f1720">
+
+<style>
+/* --- Estilização Geral --- */
+body { font-family: 'Segoe UI', sans-serif; background:#0f1720; color:#e6eef6; margin:0; padding:15px; }
+.container { max-width:1100px; margin:0 auto; padding-bottom: 50px; }
+h1 { text-align:center; color: #2b9cff; margin-bottom: 20px; font-size: 1.5rem; }
+
+/* --- Sistema de Abas --- */
+.tab-container { display: flex; border-bottom: 2px solid #2a3a4d; margin-bottom: 20px; gap: 5px; }
+.tab-button {
+  background: #14212d; color: #98a3b3; border: none; padding: 12px 20px; flex: 1;
+  cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; transition: 0.3s;
+}
+.tab-button.active { background: #2b9cff; color: white; }
+.tab-content { display: none; animation: fadeIn 0.3s; }
+.tab-content.active { display: block; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+/* --- Cards e Forms --- */
+.card { background:#14212d; padding:20px; border-radius:12px; margin-bottom:20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+label { display:block; margin-top:12px; font-weight: 600; color: #a0aec0; font-size: 0.9rem; }
+input, select {
+  width:100%; padding:12px; border-radius:6px;
+  border:1px solid #2a3a4d; background:#0d1a24; color:#fff;
+  box-sizing: border-box; margin-top: 5px; font-size: 16px; /* Evita zoom no iOS */
+}
+.row { display:flex; gap:15px; flex-wrap: wrap; }
+.row > * { flex:1; min-width: 140px; }
+
+/* --- Botões --- */
+button { padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font-weight: bold; transition: 0.2s; font-size: 14px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; }
+button:active { transform: scale(0.98); }
+.btn-main { background:#2b9cff; color: white; width: 100%; margin-top: 20px; font-size: 16px; padding: 15px; }
+.btn-red { background:#dc2626; color: white; }
+.btn-green { background:#16a34a; color: white; }
+.btn-blue { background:#2563eb; color: white; }
+.btn-share { background:#8b5cf6; color: white; }
+.btn-sync { background:#0ea5e9; color: white; }
+.btn-import { background:#2563eb; color: white; display: inline-flex; align-items: center; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; gap: 5px;}
+.btn-import:hover { opacity: 0.9; }
+
+/* --- Barra de Ferramentas --- */
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
+
+/* --- Tabela Responsiva --- */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto; /* Permite rolagem lateral no mobile */
+  -webkit-overflow-scrolling: touch;
+  border-radius: 8px;
+  border: 1px solid #2a3a4d;
+}
+table { width:100%; border-collapse:collapse; background: #0d1a24; min-width: 600px; /* Força largura mínima para scroll */ }
+th, td { padding:12px; border-bottom: 1px solid #2a3a4d; text-align: left; }
+th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 11px; white-space: nowrap; }
+tr:last-child td { border-bottom: none; }
+
+/* --- Dashboard --- */
+.stat-box { background:#0d1a24; padding:15px; border-radius:8px; text-align: center; border: 1px solid #2a3a4d; flex: 1; }
+.stat-val { font-size: 1.6em; font-weight: bold; color: #4ade80; margin-top: 5px; }
+</style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+</head>
+
+<body>
+<div class="container">
+  <h1>Gestão Oficina v6.1</h1>
+
+  <div class="tab-container">
+    <button class="tab-button active" onclick="openTab('tab-entrada', this)">📝 Lançamento</button>
+    <button class="tab-button" onclick="openTab('tab-inventario', this)">📋 Banco de Dados</button>
+  </div>
+
+  <div id="tab-entrada" class="tab-content active">
+    <div class="card">
+      <h2 style="margin-top:0; color:#fff; font-size:1.2rem;">Novo Registro</h2>
+      <div class="row">
+        <div><label>OM</label><input id="om" placeholder="Ex: 198" type="tel"></div>
+        <div><label>Patrimônio</label><input id="patrimonio" placeholder="Ex: 102030" type="tel"></div>
+      </div>
+      <label>Equipamento</label>
+      <select id="nome" onchange="autoPreencher()">
+        <option value="">-- Selecione o item --</option>
+      </select>
+      <div class="row">
+        <div><label>Horas</label><input id="horas" type="number" step="0.01" inputmode="decimal"></div>
+        <div><label>Valor Unit. (R$)</label><input id="valor" type="number" step="0.01" inputmode="decimal"></div>
+      </div>
+      <button class="btn-main" onclick="addItem()">SALVAR REGISTRO</button>
+    </div>
+    
+    <div class="card">
+      <h3 style="margin-top:0; margin-bottom:15px; font-size:1rem; color:#a0aec0;">Resumo da Sessão</h3>
+      <div class="row">
+        <div class="stat-box">
+          <div style="color:#98a3b3; font-size:0.8rem;">Horas Totais</div>
+          <div id="totalHorasEntrada" class="stat-val" style="color:#fff">0.00</div>
+        </div>
+        <div class="stat-box">
+          <div style="color:#98a3b3; font-size:0.8rem;">Custo Total</div>
+          <div id="totalValorEntrada" class="stat-val">R$ 0,00</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-inventario" class="tab-content">
+    <div class="card">
+      <div class="toolbar">
+        <button onclick="shareFile('pdf')" class="btn-share">📄 PDF</button>
+        <button onclick="shareFile('excel')" class="btn-share">📊 Excel</button>
+        <button onclick="syncData()" class="btn-sync">☁️ Sync</button>
+        
+        <button onclick="exportBackupMensal()" class="btn-blue">💾 Backup</button>
+        
+        <label class="btn-import">
+          📂 Importar <input type="file" accept=".json" hidden onchange="importBackupMensal(event)">
+        </label>
+        
+        <button onclick="deleteSelected()" class="btn-red" style="margin-left: auto;">🗑️</button>
+      </div>
+
+      <input type="text" id="searchInput" placeholder="🔍 Pesquisar por OM, Patr ou Nome..." onkeyup="load()" style="margin-bottom: 15px; border: 1px solid #2b9cff;">
+
+      <div class="table-responsive">
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 30px; text-align:center;"><input type="checkbox" onclick="toggleAll(this)"></th>
+              <th>OM</th>
+              <th>Patrimônio</th>
+              <th>Equipamento</th>
+              <th>Horas</th>
+              <th>Total (R$)</th>
+            </tr>
+          </thead>
+          <tbody id="lista"></tbody>
+        </table>
+      </div>
+      
+      <div style="margin-top:10px; text-align:right; color:#98a3b3; font-size:0.8rem;">
+        Total de itens: <span id="itemCount">0</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* --- 1. CONFIGURAÇÃO E DADOS --- */
+const tabelaPrecos = [
   { nome: "ACABADORA DE SUPERFICIE", valor: 2.00, horas: 5.0 },
+  { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
+  { nome: "BANCADA DE SERRA", valor: 8.00, horas: 4.5 },
+  { nome: "BETONEIRA 150 LT", valor: 6.00, horas: 4.5 },
   { nome: "BETONEIRA 400 LT", valor: 6.00, horas: 4.5 },
+  { nome: "BETONEIRA 600 LT", valor: 16.90, horas: 16.0 },
+  { nome: "BOMBA MANGOTE", valor: 4.00, horas: 3.0 },
+  { nome: "BOMBA SUBMERSA", valor: 4.00, horas: 4.0 },
   { nome: "COMPACTADOR", valor: 3.00, horas: 4.0 },
+  { nome: "CORTADORA", valor: 3.00, horas: 4.0 },
   { nome: "GERADOR", valor: 3.00, horas: 3.2 },
+  { nome: "GUINCHO DE ELEVAÇÃO", valor: 10.00, horas: 6.0 },
+  { nome: "MARTELO 2 KG - 220V", valor: 1.50, horas: 2.0 },
+  { nome: "MARTELO 5,7 KG - 220V", valor: 1.50, horas: 2.0 },
+  { nome: "MARTELO 6 KG - 220V", valor: 1.70, horas: 2.0 },
+  { nome: "MARTELO 11 KG - ROT", valor: 2.00, horas: 2.2 },
   { nome: "MARTELO 11 KG - 220V", valor: 1.70, horas: 2.2 },
+  { nome: "MARTELO 16/19 KG", valor: 2.00, horas: 2.3 },
+  { nome: "MARTELO 19 KG - 220V", valor: 2.00, horas: 2.5 },
+  { nome: "MARTELO 30 KG - 220V", valor: 2.00, horas: 2.5 },
+  { nome: "MINI GRUA", valor: 10.00, horas: 6.0 },
+  { nome: "MOTOR - ACIONADOR", valor: 3.00, horas: 3.0 },
+  { nome: "MOTOR - ELET TRIFA", valor: 3.00, horas: 3.0 },
+  { nome: "PLACA VIBRATORIA", valor: 3.50, horas: 4.5 },
+  { nome: "RÉGUA VIBRATÓRIA", valor: 5.00, horas: 4.5 },
+  { nome: "TORRE DE ILUMINAÇÃO", valor: 25.00, horas: 6.0 },
+  { nome: "UNIDADE HIDRÁULICA", valor: 8.00, horas: 16.0 },
   { nome: "VIBRADOR DE IMERSÃO", valor: 2.80, horas: 4.0 },
-  { nome: "ROLO COMPACTADOR", valor: 20.00, horas: 24.0 }
+  { nome: "ROLO COMPACTADOR", valor: 20.00, horas: 24.0 },
+  { nome: "MINI CARREGADEIRA", valor: 34.00, horas: 16.0 },
+  { nome: "MINI ESCAVADEIRA", valor: 34.00, horas: 16.0 },
+  { nome: "VELOX", valor: 8.00, horas: 6.0 },
+  { nome: "PERFURATRIZ", valor: 25.00, horas: 6.0 }
+];
   // ... adicione os outros aqui conforme necessário
 ];
 
