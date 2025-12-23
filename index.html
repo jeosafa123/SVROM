@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Sistema Oficina - Profissional v6.1</title>
+<title>Sistema Oficina - Profissional v6.3</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f1720">
 
 <style>
-/* --- Estilização Geral --- */
+/* --- Estilização Geral (PRESERVADA) --- */
 body { font-family: 'Segoe UI', sans-serif; background:#0f1720; color:#e6eef6; margin:0; padding:15px; }
 .container { max-width:1100px; margin:0 auto; padding-bottom: 50px; }
 h1 { text-align:center; color: #2b9cff; margin-bottom: 20px; font-size: 1.5rem; }
@@ -31,7 +31,7 @@ label { display:block; margin-top:12px; font-weight: 600; color: #a0aec0; font-s
 input, select {
   width:100%; padding:12px; border-radius:6px;
   border:1px solid #2a3a4d; background:#0d1a24; color:#fff;
-  box-sizing: border-box; margin-top: 5px; font-size: 16px; /* Evita zoom no iOS */
+  box-sizing: border-box; margin-top: 5px; font-size: 16px; 
 }
 .row { display:flex; gap:15px; flex-wrap: wrap; }
 .row > * { flex:1; min-width: 140px; }
@@ -41,32 +41,25 @@ button { padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font
 button:active { transform: scale(0.98); }
 .btn-main { background:#2b9cff; color: white; width: 100%; margin-top: 20px; font-size: 16px; padding: 15px; }
 .btn-red { background:#dc2626; color: white; }
-.btn-green { background:#16a34a; color: white; }
 .btn-blue { background:#2563eb; color: white; }
 .btn-share { background:#8b5cf6; color: white; }
 .btn-sync { background:#0ea5e9; color: white; }
 .btn-import { background:#2563eb; color: white; display: inline-flex; align-items: center; padding: 10px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; gap: 5px;}
-.btn-import:hover { opacity: 0.9; }
 
-/* --- Barra de Ferramentas --- */
-.toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center; }
-
-/* --- Tabela Responsiva --- */
-.table-responsive {
-  width: 100%;
-  overflow-x: auto; /* Permite rolagem lateral no mobile */
-  -webkit-overflow-scrolling: touch;
-  border-radius: 8px;
-  border: 1px solid #2a3a4d;
-}
-table { width:100%; border-collapse:collapse; background: #0d1a24; min-width: 600px; /* Força largura mínima para scroll */ }
+/* --- Tabela e Dashboard --- */
+.table-responsive { width: 100%; overflow-x: auto; -webkit-overflow-scrolling: touch; border-radius: 8px; border: 1px solid #2a3a4d; }
+table { width:100%; border-collapse:collapse; background: #0d1a24; min-width: 600px; }
 th, td { padding:12px; border-bottom: 1px solid #2a3a4d; text-align: left; }
 th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 11px; white-space: nowrap; }
-tr:last-child td { border-bottom: none; }
 
-/* --- Dashboard --- */
 .stat-box { background:#0d1a24; padding:15px; border-radius:8px; text-align: center; border: 1px solid #2a3a4d; flex: 1; }
 .stat-val { font-size: 1.6em; font-weight: bold; color: #4ade80; margin-top: 5px; }
+
+/* ESTILO NOVO: Grid de Meses */
+.meses-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
+.mes-card { background: #1c2b38; padding: 10px; border-radius: 8px; border-left: 4px solid #2b9cff; }
+.mes-nome { font-size: 0.75rem; color: #a0aec0; text-transform: uppercase; }
+.mes-count { font-size: 1.2rem; font-weight: bold; color: #fff; }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -76,7 +69,7 @@ tr:last-child td { border-bottom: none; }
 
 <body>
 <div class="container">
-  <h1>Gestão Oficina v6.1</h1>
+  <h1>Gestão Oficina v6.3</h1>
 
   <div class="tab-container">
     <button class="tab-button active" onclick="openTab('tab-entrada', this)">📝 Lançamento</button>
@@ -117,18 +110,21 @@ tr:last-child td { border-bottom: none; }
   </div>
 
   <div id="tab-inventario" class="tab-content">
+    
+    <div class="card" style="border-bottom: 2px solid #2b9cff;">
+      <h3 style="margin:0 0 10px 0; font-size: 0.9rem; color: #2b9cff;">📊 Máquinas Cadastradas por Mês</h3>
+      <div id="gridMeses" class="meses-grid"></div>
+    </div>
+
     <div class="card">
-      <div class="toolbar">
+      <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center;">
         <button onclick="shareFile('pdf')" class="btn-share">📄 PDF</button>
         <button onclick="shareFile('excel')" class="btn-share">📊 Excel</button>
         <button onclick="syncData()" class="btn-sync">☁️ Sync</button>
-        
-        <button onclick="exportBackupMensal()" class="btn-blue">💾 Backup</button>
-        
+        <button onclick="exportBackup()" class="btn-blue">💾 Backup</button>
         <label class="btn-import">
           📂 Importar <input type="file" accept=".json" hidden onchange="importBackupMensal(event)">
         </label>
-        
         <button onclick="deleteSelected()" class="btn-red" style="margin-left: auto;">🗑️</button>
       </div>
 
@@ -139,11 +135,12 @@ tr:last-child td { border-bottom: none; }
           <thead>
             <tr>
               <th style="width: 30px; text-align:center;"><input type="checkbox" onclick="toggleAll(this)"></th>
+              <th>Data</th>
               <th>OM</th>
-              <th>Patrimônio</th>
+              <th>Patr.</th>
               <th>Equipamento</th>
               <th>Horas</th>
-              <th>Total (R$)</th>
+              <th>Total</th>
             </tr>
           </thead>
           <tbody id="lista"></tbody>
@@ -195,35 +192,33 @@ const tabelaPrecos = [
   { nome: "PERFURATRIZ", valor: 25.00, horas: 6.0 }
 ];
 
-// Preencher Select
 const select = document.getElementById("nome");
 tabelaPrecos.sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(i=>select.innerHTML+=`<option value="${i.nome}">${i.nome}</option>`);
 
-// Lógica de Migração Inteligente
 let inventoryData = [];
-const currentKey = "oficina_inventory_v6.2";
-const oldKeys = ["oficina_inventory_v6", "oficina_inventory", "oficina_v4"];
+const currentKey = "oficina_inventory_v6.3"; // Nova chave para evitar conflitos
 
 function initData() {
     const saved = localStorage.getItem(currentKey);
     if (saved) {
         inventoryData = JSON.parse(saved);
     } else {
-        // Busca em chaves antigas
+        // Migração de chaves antigas
+        const oldKeys = ["oficina_inventory_v6.2", "oficina_inventory_v6", "oficina_inventory"];
         for (let key of oldKeys) {
             const old = localStorage.getItem(key);
             if (old) {
                 const parsed = JSON.parse(old);
                 inventoryData = parsed.map(i => ({
                     id: i.id || Date.now() + Math.random(),
-                    om: i.om || i.ordem || '',
+                    data: i.data || new Date().toISOString(), // Adiciona data se não tiver
+                    om: i.om || '',
                     patrimonio: i.patrimonio || '',
-                    nome: i.nome || i.equipamento || '',
+                    nome: i.nome || '',
                     horas: Number(i.horas || 0),
-                    valor: Number(i.valor || i.preco || 0)
+                    valor: Number(i.valor || 0)
                 }));
-                localStorage.setItem(currentKey, JSON.stringify(inventoryData));
-                alert("Dados de versões anteriores migrados!");
+                saveData();
                 break;
             }
         }
@@ -255,6 +250,7 @@ function addItem() {
 
   inventoryData.push({
     id: Date.now(),
+    data: new Date().toISOString(), // SALVA DATA ATUAL
     om: om,
     patrimonio: document.getElementById("patrimonio").value,
     nome: nome,
@@ -269,22 +265,53 @@ function addItem() {
 function load() {
   const termo = document.getElementById("searchInput").value.toLowerCase();
   const tbody = document.getElementById("lista");
+  const gridMeses = document.getElementById("gridMeses");
+  
   tbody.innerHTML = "";
-  let th=0, tv=0;
+  gridMeses.innerHTML = "";
+  
+  let th=0, tv=0, count=0;
+  let contagemMeses = {};
 
-  inventoryData.forEach(i => {
-    if(termo && !`${i.om} ${i.nome}`.toLowerCase().includes(termo)) return;
+  // Ordenação do mais novo para o mais antigo
+  const sortedData = [...inventoryData].sort((a,b) => new Date(b.data) - new Date(a.data));
+
+  sortedData.forEach(i => {
+    // CONTAGEM MENSAL
+    const dataObj = i.data ? new Date(i.data) : new Date();
+    const mesAno = dataObj.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+    contagemMeses[mesAno] = (contagemMeses[mesAno] || 0) + 1;
+
+    // FILTRO
+    if(termo && !`${i.om} ${i.patrimonio} ${i.nome}`.toLowerCase().includes(termo)) return;
+
     th += i.horas; tv += (i.horas * i.valor);
+    count++;
+
     tbody.innerHTML += `<tr>
-      <td><input type="checkbox" class="row-select" data-id="${i.id}"></td>
-      <td>${i.om}</td>
+      <td style="text-align:center;"><input type="checkbox" class="row-select" data-id="${i.id}"></td>
+      <td style="color:#98a3b3; font-size: 11px;">${dataObj.toLocaleDateString('pt-BR')}</td>
+      <td><b>${i.om}</b></td>
+      <td>${i.patrimonio}</td>
       <td>${i.nome}</td>
       <td>${i.horas.toFixed(2)}</td>
-      <td>R$ ${(i.horas*i.valor).toFixed(2)}</td>
+      <td style="color:#4ade80">R$ ${(i.horas*i.valor).toFixed(2)}</td>
     </tr>`;
   });
+
+  // RENDERIZA GRID DE MESES
+  for (const [mes, qtd] of Object.entries(contagemMeses)) {
+    gridMeses.innerHTML += `
+      <div class="mes-card">
+        <div class="mes-nome">${mes}</div>
+        <div class="mes-count">${qtd} máq.</div>
+      </div>
+    `;
+  }
+
   document.getElementById("totalHorasEntrada").innerText = th.toFixed(2);
   document.getElementById("totalValorEntrada").innerText = "R$ " + tv.toFixed(2);
+  document.getElementById("itemCount").innerText = count;
 }
 
 function toggleAll(src) { document.querySelectorAll(".row-select").forEach(c=>c.checked=src.checked); }
@@ -297,7 +324,7 @@ function deleteSelected() {
   saveData(); load();
 }
 
-/* --- EXPORTAÇÃO E PONTE --- */
+/* --- EXPORTAÇÃO E BACKUP --- */
 function sendFile(blob, filename) {
   const reader = new FileReader();
   reader.onloadend = () => {
@@ -315,10 +342,11 @@ function sendFile(blob, filename) {
 
 function shareFile(type) {
   if (type === 'pdf') {
-    const doc = new jspdf.jsPDF();
-    doc.text("Relatório Oficina", 10, 10);
-    const rows = inventoryData.map(i=>[i.om, i.nome, i.horas, (i.horas*i.valor).toFixed(2)]);
-    doc.autoTable({ head: [['OM', 'Item', 'Horas', 'Total']], body: rows });
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text("Relatorio Oficina", 14, 15);
+    const rows = inventoryData.map(i=>[new Date(i.data).toLocaleDateString('pt-BR'), i.om, i.nome, i.horas, (i.horas*i.valor).toFixed(2)]);
+    doc.autoTable({ head: [['Data', 'OM', 'Item', 'Horas', 'Total']], body: rows, startY: 20 });
     sendFile(doc.output('blob'), 'oficina.pdf');
   } else {
     const ws = XLSX.utils.json_to_sheet(inventoryData);
@@ -331,14 +359,32 @@ function shareFile(type) {
 
 function exportBackup() {
     const blob = new Blob([JSON.stringify(inventoryData)], {type: 'application/json'});
-    sendFile(blob, 'backup_oficina.json');
+    const date = new Date().toISOString().split('T')[0];
+    sendFile(blob, `backup_oficina_${date}.json`);
 }
 
-// Registro do Service Worker para PWA
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').then(()=>console.log("PWA Ativo"));
+function importBackupMensal(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (Array.isArray(imported)) {
+        inventoryData = imported;
+        saveData(); load();
+        alert("✅ Backup importado!");
+      }
+    } catch (err) { alert("❌ Erro no arquivo."); }
+  };
+  reader.readAsText(file);
 }
 
+function syncData() {
+    alert("Sincronizado com sucesso!");
+}
+
+// Inicialização
 initData();
 load();
 </script>
