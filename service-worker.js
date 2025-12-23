@@ -1,46 +1,19 @@
-const CACHE_VERSION = "v1";
-const CACHE_NAME = `inventario-pwa-${CACHE_VERSION}`;
-
-const FILES_TO_CACHE = [
-  "./",
-  "./index.html",
-  "./manifest.json"
+const CACHE_NAME = 'oficina-v6.1';
+const assets = [
+  './',
+  './index.html',
+  'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+  'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js'
 ];
 
-// Instala e salva no cache
-self.addEventListener("install", event => {
+self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then(cache => cache.addAll(FILES_TO_CACHE))
+    caches.open(CACHE_NAME).then(cache => cache.addAll(assets))
   );
-  self.skipWaiting();
 });
 
-// Ativa e limpa versões antigas
-self.addEventListener("activate", event => {
-  event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys.map(key => {
-          if (key !== CACHE_NAME) {
-            return caches.delete(key);
-          }
-        })
-      )
-    )
-  );
-  self.clients.claim();
-});
-
-// Estratégia: cache primeiro, depois rede
-self.addEventListener("fetch", event => {
+self.addEventListener('fetch', event => {
   event.respondWith(
-    caches.match(event.request).then(response => {
-      return (
-        response ||
-        fetch(event.request).catch(() =>
-          caches.match("./index.html")
-        )
-      );
-    })
+    caches.match(event.request).then(response => response || fetch(event.request))
   );
 });
