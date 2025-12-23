@@ -1,18 +1,17 @@
 {
-  "name": "Invent\u00e1rio Oficina",
-  "short_name": "Invent\u00e1rio",
+  "name": "Gestão Oficina Mecânica",
+  "short_name": "Oficina",
+  "description": "Sistema Profissional de Gestão de Oficina",
   "start_url": "index.html",
   "display": "standalone",
+  "background_color": "#0f1720",
+  "theme_color": "#2b9cff",
   "icons": [
     {
-      "src": "icons/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png"
-    },
-    {
-      "src": "icons/icon-512.png",
+      "src": "https://cdn-icons-png.flaticon.com/512/1048/1048953.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }
