@@ -110,7 +110,6 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
   </div>
 
   <div id="tab-inventario" class="tab-content">
-    
     <div class="card" style="border-bottom: 2px solid #2b9cff;">
       <h3 style="margin:0 0 10px 0; font-size: 0.9rem; color: #2b9cff;">📊 Máquinas Cadastradas por Mês</h3>
       <div id="gridMeses" class="meses-grid"></div>
@@ -195,31 +194,34 @@ const tabelaPrecos = [
 const select = document.getElementById("nome");
 tabelaPrecos.sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(i=>select.innerHTML+=`<option value="${i.nome}">${i.nome}</option>`);
 
+/* --- Lógica de Migração de Dados (MANTER CHAVES ANTIGAS) --- */
 let inventoryData = [];
-const currentKey = "oficina_inventory_v6.3"; // Nova chave para evitar conflitos
+const currentKey = "oficina_inventory_v6.3"; 
 
 function initData() {
     const saved = localStorage.getItem(currentKey);
     if (saved) {
         inventoryData = JSON.parse(saved);
     } else {
-        // Migração de chaves antigas
-        const oldKeys = ["oficina_inventory_v6.2", "oficina_inventory_v6", "oficina_inventory"];
+        const oldKeys = ["oficina_inventory_v6.2", "oficina_inventory_v6.1", "oficina_inventory_v6", "oficina_inventory", "oficina_v4"];
         for (let key of oldKeys) {
-            const old = localStorage.getItem(key);
-            if (old) {
-                const parsed = JSON.parse(old);
-                inventoryData = parsed.map(i => ({
-                    id: i.id || Date.now() + Math.random(),
-                    data: i.data || new Date().toISOString(), // Adiciona data se não tiver
-                    om: i.om || '',
-                    patrimonio: i.patrimonio || '',
-                    nome: i.nome || '',
-                    horas: Number(i.horas || 0),
-                    valor: Number(i.valor || 0)
-                }));
-                saveData();
-                break;
+            const oldDataRaw = localStorage.getItem(key);
+            if (oldDataRaw) {
+                try {
+                    const parsed = JSON.parse(oldDataRaw);
+                    inventoryData = parsed.map(i => ({
+                        id: i.id || Date.now() + Math.random(),
+                        data: i.data || new Date().toISOString(),
+                        om: i.om || i.ordem || '',
+                        patrimonio: i.patrimonio || '',
+                        nome: i.nome || i.equipamento || '',
+                        horas: Number(i.horas || 0),
+                        valor: Number(i.valor || i.preco || 0)
+                    }));
+                    saveData();
+                    console.log(`Dados migrados da chave: ${key}`);
+                    break;
+                } catch (e) { console.error("Erro na migração", e); }
             }
         }
     }
@@ -250,7 +252,7 @@ function addItem() {
 
   inventoryData.push({
     id: Date.now(),
-    data: new Date().toISOString(), // SALVA DATA ATUAL
+    data: new Date().toISOString(),
     om: om,
     patrimonio: document.getElementById("patrimonio").value,
     nome: nome,
@@ -273,16 +275,13 @@ function load() {
   let th=0, tv=0, count=0;
   let contagemMeses = {};
 
-  // Ordenação do mais novo para o mais antigo
   const sortedData = [...inventoryData].sort((a,b) => new Date(b.data) - new Date(a.data));
 
   sortedData.forEach(i => {
-    // CONTAGEM MENSAL
     const dataObj = i.data ? new Date(i.data) : new Date();
     const mesAno = dataObj.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
     contagemMeses[mesAno] = (contagemMeses[mesAno] || 0) + 1;
 
-    // FILTRO
     if(termo && !`${i.om} ${i.patrimonio} ${i.nome}`.toLowerCase().includes(termo)) return;
 
     th += i.horas; tv += (i.horas * i.valor);
@@ -299,7 +298,6 @@ function load() {
     </tr>`;
   });
 
-  // RENDERIZA GRID DE MESES
   for (const [mes, qtd] of Object.entries(contagemMeses)) {
     gridMeses.innerHTML += `
       <div class="mes-card">
@@ -380,11 +378,12 @@ function importBackupMensal(event) {
   reader.readAsText(file);
 }
 
-function syncData() {
-    alert("Sincronizado com sucesso!");
+function syncData() { alert("Sincronizado com sucesso!"); }
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').then(()=>console.log("PWA Ativo"));
 }
 
-// Inicialização
 initData();
 load();
 </script>
