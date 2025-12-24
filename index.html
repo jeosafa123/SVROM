@@ -198,12 +198,9 @@ tabelaPrecos.sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(i=>select.innerHT
 
 /* --- Lógica de Migração de Dados (MANTER CHAVES ANTIGAS) --- */
 let inventoryData = [];
-const oldKeys=[
- "oficina_inventory_v6.2",
- "oficina_inventory_v6.1",
- "oficina_inventory_v6",
+const oldKeys=["oficina_inventory_v6",
  "oficina_inventory",
- "oficina_v4"
+ "oficina_v4"];
 
 function initData() {
     const saved = localStorage.getItem(currentKey);
