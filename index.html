@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Sistema Oficina - Profissional v6.3</title>
+<title>Gestão Oficina Pro v6.4</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f1720">
@@ -55,7 +55,6 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
 .stat-box { background:#0d1a24; padding:15px; border-radius:8px; text-align: center; border: 1px solid #2a3a4d; flex: 1; }
 .stat-val { font-size: 1.6em; font-weight: bold; color: #4ade80; margin-top: 5px; }
 
-/* ESTILO NOVO: Grid de Meses */
 .meses-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; margin-top: 10px; }
 .mes-card { background: #1c2b38; padding: 10px; border-radius: 8px; border-left: 4px solid #2b9cff; }
 .mes-nome { font-size: 0.75rem; color: #a0aec0; text-transform: uppercase; }
@@ -69,7 +68,7 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
 
 <body>
 <div class="container">
-  <h1>Gestão Oficina v6.3</h1>
+  <h1>Gestão Oficina v6.4</h1>
 
   <div class="tab-container">
     <button class="tab-button active" onclick="openTab('tab-entrada', this)">📝 Lançamento</button>
@@ -119,7 +118,6 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px; align-items: center;">
         <button onclick="shareFile('pdf')" class="btn-share">📄 PDF</button>
         <button onclick="shareFile('excel')" class="btn-share">📊 Excel</button>
-        <button onclick="syncData()" class="btn-sync">☁️ Sync</button>
         <button onclick="exportBackup()" class="btn-blue">💾 Backup</button>
         <label class="btn-import">
           📂 Importar <input type="file" accept=".json" hidden onchange="importBackupMensal(event)">
@@ -154,7 +152,7 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
 </div>
 
 <script>
-/* --- 1. CONFIGURAÇÃO E DADOS --- */
+/* --- CONFIGURAÇÃO E TABELA DE PREÇOS --- */
 const tabelaPrecos = [
   { nome: "ACABADORA DE SUPERFICIE", valor: 2.00, horas: 5.0 },
   { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
@@ -194,36 +192,53 @@ const tabelaPrecos = [
 const select = document.getElementById("nome");
 tabelaPrecos.sort((a,b)=>a.nome.localeCompare(b.nome)).forEach(i=>select.innerHTML+=`<option value="${i.nome}">${i.nome}</option>`);
 
-/* --- Lógica de Migração de Dados (MANTER CHAVES ANTIGAS) --- */
+/* --- RESGATE DE DADOS E MIGRAÇÃO --- */
 let inventoryData = [];
-const currentKey = "oficina_inventory_v6.3"; 
+const currentKey = "oficina_inventory_v6.4"; 
 
 function initData() {
     const saved = localStorage.getItem(currentKey);
-    if (saved) {
-        inventoryData = JSON.parse(saved);
-    } else {
-        const oldKeys = ["oficina_inventory_v6.2", "oficina_inventory_v6.1", "oficina_inventory_v6", "oficina_inventory", "oficina_v4"];
-        for (let key of oldKeys) {
-            const oldDataRaw = localStorage.getItem(key);
-            if (oldDataRaw) {
-                try {
-                    const parsed = JSON.parse(oldDataRaw);
-                    inventoryData = parsed.map(i => ({
-                        id: i.id || Date.now() + Math.random(),
-                        data: i.data || new Date().toISOString(),
-                        om: i.om || i.ordem || '',
-                        patrimonio: i.patrimonio || '',
-                        nome: i.nome || i.equipamento || '',
-                        horas: Number(i.horas || 0),
-                        valor: Number(i.valor || i.preco || 0)
-                    }));
-                    saveData();
-                    console.log(`Dados migrados da chave: ${key}`);
-                    break;
-                } catch (e) { console.error("Erro na migração", e); }
-            }
+    const todasAsChaves = [
+        "oficina_inventory_v6.3",
+        "oficina_inventory_v6.2", 
+        "oficina_inventory_v6.1", 
+        "oficina_inventory_v6", 
+        "oficina_inventory", 
+        "oficina_v4",
+        "oficina_dados"
+    ];
+
+    let dadosEncontrados = [];
+
+    todasAsChaves.forEach(key => {
+        const item = localStorage.getItem(key);
+        if (item) {
+            try {
+                const parsed = JSON.parse(item);
+                if (Array.isArray(parsed)) {
+                    parsed.forEach(novoItem => {
+                        if (!dadosEncontrados.find(d => d.id === novoItem.id)) {
+                            dadosEncontrados.push({
+                                id: novoItem.id || Date.now() + Math.random(),
+                                data: novoItem.data || new Date().toISOString(),
+                                om: novoItem.om || novoItem.ordem || '',
+                                patrimonio: novoItem.patrimonio || '',
+                                nome: novoItem.nome || novoItem.equipamento || '',
+                                horas: Number(novoItem.horas || 0),
+                                valor: Number(novoItem.valor || novoItem.preco || 0)
+                            });
+                        }
+                    });
+                }
+            } catch(e) {}
         }
+    });
+
+    if (dadosEncontrados.length > 0) {
+        inventoryData = dadosEncontrados;
+        saveData(); 
+    } else if (saved) {
+        inventoryData = JSON.parse(saved);
     }
 }
 
@@ -322,7 +337,6 @@ function deleteSelected() {
   saveData(); load();
 }
 
-/* --- EXPORTAÇÃO E BACKUP --- */
 function sendFile(blob, filename) {
   const reader = new FileReader();
   reader.onloadend = () => {
@@ -357,8 +371,7 @@ function shareFile(type) {
 
 function exportBackup() {
     const blob = new Blob([JSON.stringify(inventoryData)], {type: 'application/json'});
-    const date = new Date().toISOString().split('T')[0];
-    sendFile(blob, `backup_oficina_${date}.json`);
+    sendFile(blob, `backup_oficina.json`);
 }
 
 function importBackupMensal(event) {
@@ -371,17 +384,11 @@ function importBackupMensal(event) {
       if (Array.isArray(imported)) {
         inventoryData = imported;
         saveData(); load();
-        alert("✅ Backup importado!");
+        alert("✅ Importado!");
       }
     } catch (err) { alert("❌ Erro no arquivo."); }
   };
   reader.readAsText(file);
-}
-
-function syncData() { alert("Sincronizado com sucesso!"); }
-
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker.register('sw.js').then(()=>console.log("PWA Ativo"));
 }
 
 initData();
