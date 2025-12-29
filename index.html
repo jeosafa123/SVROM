@@ -390,6 +390,67 @@ function importBackupMensal(event) {
   };
   reader.readAsText(file);
 }
+<!-- ================= GOOGLE SHEETS SYNC ================= -->
+<script>
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwANrGm4-M-5gqb74eQ4YDEujizkIUAhqXKI_gf5v_6-e-u9m-TQrvxULS_fdtXq7CN/exec";
+const TOKEN = "OFICINA-SEGURA-123";
+
+const STORAGE_KEYS_GOOGLE = [
+  "oficina_inventory_v6.3",
+  "oficina_inventory_v6.2",
+  "oficina_inventory_v6.1",
+  "oficina_inventory_v6",
+  "oficina_inventory",
+  "oficina_v4"
+];
+
+function carregarDadosCompat() {
+  if (typeof inventoryData !== "undefined" && inventoryData.length) return;
+  for (const k of STORAGE_KEYS_GOOGLE) {
+    const d = localStorage.getItem(k);
+    if (d) {
+      inventoryData = JSON.parse(d);
+      break;
+    }
+  }
+}
+
+async function syncData() {
+  carregarDadosCompat();
+
+  if (!inventoryData || !inventoryData.length) {
+    alert("Nenhum dado para sincronizar.");
+    return;
+  }
+
+  let enviados = 0;
+
+  for (const item of inventoryData) {
+    try {
+      const res = await fetch(GOOGLE_SCRIPT_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          token: TOKEN,
+          id: item.id,
+          data: item.data,
+          om: item.om,
+          patrimonio: item.patrimonio,
+          nome: item.nome,
+          horas: item.horas,
+          valor: item.valor
+        })
+      });
+      if (res.ok) enviados++;
+    } catch (e) {
+      console.error("Erro ao sincronizar:", e);
+    }
+  }
+
+  alert("☁️ Sincronização concluída!\n" + enviados + " registros enviados.");
+}
+</script>
+<!-- ================= FIM GOOGLE SHEETS ================= -->
 
 initData();
 load();
