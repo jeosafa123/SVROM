@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sistema Oficina - Profissional v6.3</title>
+<title>Sistema Oficina - Profissional v7.0</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f1720">
@@ -102,9 +102,13 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
   <div id="tab-inventario" class="tab-content">
     <div class="card">
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;">
-        <button id="btnPdf" onclick="shareFile('pdf')" class="btn-share">📤 PDF</button>
-        <button id="btnExcel" onclick="shareFile('excel')" class="btn-share">📤 Excel</button>
-        <button onclick="syncData()" class="btn-sync">☁️ Sincronizar Nuvem (Limpar Local)</button>
+        <button onclick="generatePDF()" class="btn-share">📤 PDF</button>
+        <button onclick="generateExcel()" class="btn-share">📤 Excel</button>
+        <button onclick="syncData()" class="btn-sync">☁️ Sincronizar Nuvem</button>
+        <button onclick="exportBackupMensal()" class="btn-blue">📥 Backup JSON</button>
+        <label class="btn-blue" style="padding: 10px 15px; border-radius: 8px; cursor: pointer;">
+          ♻️ Importar <input type="file" accept=".json" hidden onchange="importBackupMensal(event)">
+        </label>
         <button onclick="deleteSelected()" class="btn-red" style="margin-left: auto;">🗑️ Excluir</button>
       </div>
 
@@ -128,11 +132,11 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
 </div>
 
 <script>
-/* ===== CONFIGURAÇÕES ===== */
+/* ===== CONFIGURAÇÕES GOOGLE SHEETS ===== */
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1gF93QyFH9mYuE2Nm3XYgdvQ19JNfR5HvM9uSLmGBzab2QmFlowN3oCZvjmG7YoLf/exec";
 const TOKEN = "OFICINA-SEGURA-123";
 
-/* DADOS DO BANCO (ORIGINAIS MANTIDOS) */
+/* TABELA DE PREÇOS ORIGINAL */
 const tabelaPrecos = [
   { nome: "ACABADORA DE SUPERFICIE", valor: 2.00, horas: 5.0 },
   { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
@@ -172,8 +176,12 @@ const tabelaPrecos = [
 const select = document.getElementById("nome");
 tabelaPrecos.forEach(i => select.innerHTML += `<option value="${i.nome}">${i.nome}</option>`);
 
-/* FUNÇÕES DE INTERFACE */
+/* LÓGICA DE DADOS */
 let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || [];
+
+function saveData() {
+  localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
+}
 
 function openTab(tabId, btn) {
   document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
@@ -204,9 +212,9 @@ function addItem() {
   if (!item.om || !item.nome) return alert("OM e Equipamento são obrigatórios!");
 
   inventoryData.push(item);
-  localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
+  saveData();
   load();
-  alert("Adicionado!");
+  alert("Item adicionado ao banco local!");
   document.getElementById("om").value = "";
   document.getElementById("patrimonio").value = "";
 }
@@ -219,25 +227,28 @@ function load() {
 
   inventoryData.forEach((i, idx) => {
     if (termo && !`${i.om} ${i.patrimonio} ${i.nome}`.toLowerCase().includes(termo)) return;
+    
     th += i.horas;
     tv += (i.horas * i.valor);
+
     tbody.innerHTML += `<tr>
       <td><input type="checkbox" class="row-select" data-index="${idx}"></td>
       <td>${i.om}</td>
       <td>${i.patrimonio}</td>
       <td>${i.nome}</td>
-      <td>${i.horas.toFixed(2)}</td>
-      <td>R$ ${i.valor.toFixed(2)}</td>
+      <td>${Number(i.horas).toFixed(2)}</td>
+      <td>R$ ${Number(i.valor).toFixed(2)}</td>
     </tr>`;
   });
+
   document.getElementById("totalHorasEntrada").innerText = th.toFixed(2);
   document.getElementById("totalValorEntrada").innerText = "R$ " + tv.toFixed(2);
 }
 
-/* ===== SINCRONIZAÇÃO TURBO ===== */
+/* ===== SINCRONIZAÇÃO EM LOTE ===== */
 async function syncData() {
   if (inventoryData.length === 0) return alert("Não há nada para sincronizar.");
-  if (!confirm(`Deseja enviar ${inventoryData.length} registros para a planilha?`)) return;
+  if (!confirm(`Enviar ${inventoryData.length} registros para a nuvem e limpar lista local?`)) return;
 
   const btn = document.querySelector('.btn-sync');
   btn.innerText = "🚀 Enviando...";
@@ -254,44 +265,80 @@ async function syncData() {
       })
     });
 
-    alert("☁️ Sincronização Concluída!\nA lista local foi limpa.");
+    alert("☁️ Sincronização Concluída!\nOs dados estão na planilha e a lista local foi limpa.");
     inventoryData = [];
-    localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
+    saveData();
     load();
-
   } catch (e) {
-    alert("Erro na conexão!");
+    alert("Erro ao conectar com a planilha.");
     console.error(e);
   } finally {
-    btn.innerText = "☁️ Sincronizar Nuvem (Limpar Local)";
+    btn.innerText = "☁️ Sincronizar Nuvem";
     btn.disabled = false;
   }
 }
 
-/* EXPORTAÇÕES (MANTIDAS DO ORIGINAL) */
-function shareFile(type) {
-  if (type === 'pdf') generatePDF();
-  else generateExcel();
+/* ===== EXPORTAÇÕES E BACKUP (ORIGINAIS) ===== */
+function sendBlobToNativeOrDownload(blob, filename) {
+  const reader = new FileReader();
+  reader.onloadend = () => {
+    const base64 = reader.result.split(',')[1];
+    if (window.Android && window.Android.downloadFile) {
+       window.Android.downloadFile(base64, filename);
+    } else {
+       const url = URL.createObjectURL(blob);
+       const a = document.createElement('a');
+       a.href = url; a.download = filename;
+       document.body.appendChild(a); a.click(); a.remove();
+    }
+  };
+  reader.readAsDataURL(blob);
 }
 
 function generatePDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF();
   doc.text("Inventário Oficina", 14, 15);
-  const rows = inventoryData.map(i => [i.om, i.patrimonio, i.nome, i.horas, i.valor]);
+  const rows = inventoryData.map(i => [i.om, i.patrimonio, i.nome, i.horas.toFixed(2), i.valor.toFixed(2)]);
   doc.autoTable({
-    head: [['OM', 'Patrimônio', 'Equipamento', 'Horas', 'Valor']],
+    head: [['OM', 'Patrimônio', 'Equipamento', 'Horas', 'Valor Unit.']],
     body: rows,
     startY: 20
   });
-  doc.save("inventario.pdf");
+  sendBlobToNativeOrDownload(doc.output('blob'), 'inventario.pdf');
 }
 
 function generateExcel() {
-  const ws = XLSX.utils.json_to_sheet(inventoryData);
+  const ws_data = [
+    ['OM','Patrimônio','Equipamento','Horas','Valor Unit.'],
+    ...inventoryData.map(i => [i.om, i.patrimonio, i.nome, i.horas, i.valor])
+  ];
   const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(ws_data);
   XLSX.utils.book_append_sheet(wb, ws, "Inventário");
-  XLSX.writeFile(wb, "inventario.xlsx");
+  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+  sendBlobToNativeOrDownload(new Blob([wbout], {type:"application/octet-stream"}), 'inventario.xlsx');
+}
+
+function exportBackupMensal() {
+  const blob = new Blob([JSON.stringify(inventoryData, null, 2)], {type: "application/json"});
+  sendBlobToNativeOrDownload(blob, 'backup_oficina.json');
+}
+
+function importBackupMensal(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    try {
+      const data = JSON.parse(e.target.result);
+      inventoryData = data;
+      saveData();
+      load();
+      alert("Backup importado!");
+    } catch(err) { alert("Arquivo JSON inválido."); }
+  };
+  reader.readAsText(file);
 }
 
 function deleteSelected() {
@@ -299,7 +346,7 @@ function deleteSelected() {
   if (!checks.length || !confirm("Excluir selecionados?")) return;
   const idxs = Array.from(checks).map(c => parseInt(c.getAttribute('data-index'))).sort((a,b)=>b-a);
   idxs.forEach(i => inventoryData.splice(i, 1));
-  localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
+  saveData();
   load();
 }
 
