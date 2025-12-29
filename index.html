@@ -3,9 +3,8 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sistema Oficina - Profissional v6</title>
+<title>Sistema Oficina - Turbo v6.1</title>
 
-<!-- PWA manifest -->
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f1720">
 
@@ -43,7 +42,7 @@ button { padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font
 .btn-green { background:#16a34a; color: white; }
 .btn-blue { background:#2563eb; color: white; }
 .btn-share { background:#8b5cf6; color: white; }
-.btn-sync { background:#0ea5e9; color: white; }
+.btn-sync { background:#0ea5e9; color: white; border: 2px solid #0284c7; }
 
 /* Tabela */
 table { width:100%; border-collapse:collapse; margin-top:15px; background: #0d1a24; border-radius: 8px; overflow: hidden; }
@@ -55,7 +54,6 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
 .stat-val { font-size: 1.8em; font-weight: bold; color: #4ade80; }
 </style>
 
-<!-- Bibliotecas -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
@@ -107,12 +105,8 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;">
         <button id="btnPdf" onclick="shareFile('pdf')" class="btn-share">📤 PDF</button>
         <button id="btnExcel" onclick="shareFile('excel')" class="btn-share">📤 Excel</button>
-        <button onclick="syncData()" class="btn-sync">☁️ Sincronizar Nuvem</button>
-        <button onclick="exportBackupMensal()" class="btn-blue">📥 Backup</button>
-        <label class="btn-blue" style="padding: 10px 15px; border-radius: 8px; cursor: pointer;">
-          ♻️ Importar <input type="file" accept=".json" hidden onchange="importBackupMensal(event)">
-        </label>
-        <button onclick="deleteSelected()" class="btn-red" style="margin-left: auto;">🗑️ Excluir</button>
+        <button onclick="syncData()" class="btn-sync">☁️ Sincronizar Tudo (Nuvem)</button>
+        <button onclick="deleteSelected()" class="btn-red" style="margin-left: auto;">🗑️ Excluir Selecionados</button>
       </div>
 
       <input type="text" id="searchInput" placeholder="🔍 Pesquisar..." onkeyup="load()" style="margin-bottom: 15px; border: 1px solid #2b9cff;">
@@ -135,7 +129,11 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
 </div>
 
 <script>
-/* DADOS DO BANCO */
+/* ===== CONFIGURAÇÃO GOOGLE SHEETS ===== */
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1gF93QyFH9mYuE2Nm3XYgdvQ19JNfR5HvM9uSLmGBzab2QmFlowN3oCZvjmG7YoLf/exec";
+const TOKEN = "OFICINA-SEGURA-123";
+
+/* TABELA DE PREÇOS */
 const tabelaPrecos = [
   { nome: "ACABADORA DE SUPERFICIE", valor: 2.00, horas: 5.0 },
   { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
@@ -172,10 +170,17 @@ const tabelaPrecos = [
   { nome: "PERFURATRIZ", valor: 25.00, horas: 6.0 }
 ];
 
+// Preenche o Select
 const select = document.getElementById("nome");
 tabelaPrecos.forEach(i => select.innerHTML += `<option value="${i.nome}">${i.nome}</option>`);
 
-/* Abre abas de interface */
+/* LÓGICA DE DADOS */
+let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || [];
+
+function saveData() {
+  localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
+}
+
 function openTab(tabId, btn) {
   document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
   document.querySelectorAll('.tab-button').forEach(tb => tb.classList.remove('active'));
@@ -183,7 +188,6 @@ function openTab(tabId, btn) {
   if (btn) btn.classList.add('active');
 }
 
-/* Auto preencher ao selecionar equipamento */
 function autoPreencher() {
   const item = tabelaPrecos.find(i => i.nome === select.value);
   if (item) {
@@ -192,76 +196,95 @@ function autoPreencher() {
   }
 }
 
-/* INICIALIZAÇÃO DE DADOS (carrega e normaliza) */
-let inventoryDataRaw = JSON.parse(localStorage.getItem("oficina_inventory")) ||
-                       JSON.parse(localStorage.getItem("oficina_v4")) || [];
-let inventoryData = (inventoryDataRaw || []).map(i => ({
-  om: i?.om || '',
-  patrimonio: i?.patrimonio || '',
-  nome: i?.nome || '',
-  horas: Number(i?.horas) || 0,
-  valor: Number(i?.valor) || 0
-}));
-
-/* Salva dados normalizados */
-function saveData() {
-  localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-}
-
-/* Adiciona item */
 function addItem() {
   const item = {
-    om: (document.getElementById("om").value || '').toString(),
-    patrimonio: (document.getElementById("patrimonio").value || '').toString(),
-    nome: select.value || '',
+    id: "ID-" + Date.now(),
+    data: new Date().toLocaleDateString('pt-BR'),
+    om: document.getElementById("om").value,
+    patrimonio: document.getElementById("patrimonio").value,
+    nome: select.value,
     horas: Number(document.getElementById("horas").value) || 0,
     valor: Number(document.getElementById("valor").value) || 0
   };
 
-  if (!item.om || !item.nome) {
-    return alert("Campos OM e Nome são obrigatórios! Por favor, preencha todos os campos.");
-  }
+  if (!item.om || !item.nome) return alert("OM e Nome são obrigatórios!");
 
   inventoryData.push(item);
   saveData();
   load();
-  alert("Item salvo!");
+  alert("Item adicionado!");
+  // Limpa campos
+  document.getElementById("om").value = "";
+  document.getElementById("patrimonio").value = "";
 }
 
-/* Carrega a lista e calcula totais (horas somam; total valor = horas * valorUnit) */
 function load() {
-  const termo = (document.getElementById("searchInput").value || '').toLowerCase();
+  const termo = document.getElementById("searchInput").value.toLowerCase();
   const tbody = document.getElementById("lista");
   tbody.innerHTML = "";
   let th = 0, tv = 0;
 
   inventoryData.forEach((i, idx) => {
     if (termo && !`${i.om} ${i.patrimonio} ${i.nome}`.toLowerCase().includes(termo)) return;
-
-    const horasNum = Number(i.horas) || 0;
-    const valorUnit = Number(i.valor) || 0;
-    th += horasNum;
-    tv += horasNum * valorUnit;
+    
+    th += i.horas;
+    tv += (i.horas * i.valor);
 
     tbody.innerHTML += `<tr>
       <td><input type="checkbox" class="row-select" data-index="${idx}"></td>
       <td>${i.om}</td>
       <td>${i.patrimonio}</td>
       <td>${i.nome}</td>
-      <td>${(Number(i.horas) || 0).toFixed(2)}</td>
-      <td>R$ ${Number(i.valor || 0).toFixed(2)}</td>
+      <td>${i.horas.toFixed(2)}</td>
+      <td>R$ ${i.valor.toFixed(2)}</td>
     </tr>`;
   });
 
   document.getElementById("totalHorasEntrada").innerText = th.toFixed(2);
   document.getElementById("totalValorEntrada").innerText = "R$ " + tv.toFixed(2);
-  console.log("Dados carregados:", inventoryData.length, "TotalHoras:", th, "TotalValor:", tv);
+}
+
+/* ===== SINCRONIZAÇÃO TURBO COM LIMPEZA AUTOMÁTICA ===== */
+async function syncData() {
+  if (inventoryData.length === 0) return alert("Não há nada para sincronizar.");
+  
+  if (!confirm("Isso enviará " + inventoryData.length + " itens para a nuvem e limpará sua lista local. Continuar?")) return;
+
+  const btn = document.querySelector('.btn-sync');
+  btn.innerText = "🚀 Sincronizando...";
+  btn.disabled = true;
+
+  try {
+    await fetch(GOOGLE_SCRIPT_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        token: TOKEN,
+        itens: inventoryData
+      })
+    });
+
+    // SUCESSO - Limpar tudo
+    alert("☁️ Sucesso! Dados enviados para a planilha.");
+    
+    inventoryData = []; // Limpa o array
+    saveData();        // Salva vazio no LocalStorage
+    load();            // Atualiza a tabela (ficará vazia)
+
+  } catch (e) {
+    alert("Erro na conexão!");
+    console.error(e);
+  } finally {
+    btn.innerText = "☁️ Sincronizar Tudo (Nuvem)";
+    btn.disabled = false;
+  }
 }
 
 function deleteSelected() {
   const checks = document.querySelectorAll(".row-select:checked");
-  if (!checks.length || !confirm("Excluir?")) return;
-  const idxs = Array.from(checks).map(c => parseInt(c.getAttribute('data-index'))).sort((a, b) => b - a);
+  if (!checks.length || !confirm("Excluir selecionados?")) return;
+  const idxs = Array.from(checks).map(c => parseInt(c.getAttribute('data-index'))).sort((a,b)=>b-a);
   idxs.forEach(i => inventoryData.splice(i, 1));
   saveData();
   load();
@@ -271,159 +294,11 @@ function toggleAll(source) {
   document.querySelectorAll(".row-select").forEach(c => c.checked = source.checked);
 }
 
-/* ------------------ EXPORTAÇÃO (PDF / EXCEL) e envio para native ------------------ */
-
-/* Função principal chamada pelos botões */
-function shareFile(type) {
-  console.log('shareFile chamado:', type);
-  if (type === 'pdf') return generatePDF();
-  if (type === 'excel') return generateExcel();
-  alert('Formato não suportado: ' + type);
-}
-
-/* Envia Blob para o app nativo em base64 (se existir bridge), senão fallback download */
-function sendBlobToNativeOrDownload(blob, filename) {
-  const reader = new FileReader();
-  reader.onloadend = () => {
-    const dataUrl = reader.result; // data:...;base64,...
-    const base64 = dataUrl.split(',')[1];
-
-    // Android bridge (Java): window.Android.downloadFile(base64, filename);
-    if (window.Android && typeof window.Android.downloadFile === 'function') {
-      try {
-        console.log('Enviando arquivo para bridge Android:', filename);
-        window.Android.downloadFile(base64, filename);
-        return;
-      } catch (e) {
-        console.warn('Erro ao chamar Android.downloadFile:', e);
-      }
-    }
-
-    // iOS bridge (WKWebView)
-    if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.download) {
-      try {
-        console.log('Enviando arquivo para iOS bridge via messageHandlers.download');
-        window.webkit.messageHandlers.download.postMessage({ filename: filename, data: base64 });
-        return;
-      } catch (e) {
-        console.warn('Erro ao postar mensagem para iOS bridge:', e);
-      }
-    }
-
-    // fallback: tentativa de download via link (muitos WebViews bloqueiam)
-    try {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      console.log('Fallback download acionado:', filename);
-    } catch (e) {
-      console.error('Fallback download falhou:', e);
-      alert('Não foi possível salvar o arquivo neste WebView. Se você controla o app Android, implemente a ponte nativa (Android) para receber o arquivo base64 e salvá-lo.');
-    }
-  };
-  reader.onerror = (err) => {
-    console.error('Erro lendo blob para base64:', err);
-    alert('Erro ao preparar o arquivo para download.');
-  };
-  reader.readAsDataURL(blob);
-}
-
-/* Gera PDF com jsPDF + autoTable (com fallback textual se plugin não estiver registrado) */
-async function generatePDF() {
-  try {
-    const { jsPDF } = window.jspdf || {};
-    if (!jsPDF) throw new Error('jsPDF não encontrado');
-    const doc = new jsPDF();
-    doc.setFontSize(14);
-    doc.text('Inventário - Oficina', 14, 12);
-
-    const head = [['OM','Patrimônio','Equipamento','Horas','Valor (R$)']];
-    const body = inventoryData.map(i => [
-      i.om || '',
-      i.patrimonio || '',
-      i.nome || '',
-      (Number(i.horas)||0).toFixed(2),
-      (Number(i.valor)||0).toFixed(2)
-    ]);
-
-    if (typeof doc.autoTable === 'function') {
-      doc.autoTable({ head, body, startY: 18, styles: { fontSize: 9 } });
-    } else {
-      // fallback textual simples
-      let y = 18;
-      doc.setFontSize(10);
-      head[0].forEach((h, idx) => doc.text(String(h), 14 + idx*36, y));
-      y += 6;
-      body.forEach(row => {
-        row.forEach((cell, idx) => doc.text(String(cell), 14 + idx*36, y));
-        y += 6;
-        if (y > 280) { doc.addPage(); y = 20; }
-      });
-    }
-
-    const pdfBlob = doc.output('blob');
-    sendBlobToNativeOrDownload(pdfBlob, 'inventario.pdf');
-  } catch (err) {
-    console.error('Erro ao gerar PDF:', err);
-    alert('Erro ao gerar PDF. Veja console.');
-  }
-}
-
-/* Gera Excel com SheetJS (XLSX) */
-function generateExcel() {
-  try {
-    const ws_data = [
-      ['OM','Patrimônio','Equipamento','Horas','Valor (R$)'],
-      ...inventoryData.map(i => [
-        i.om || '',
-        i.patrimonio || '',
-        i.nome || '',
-        Number(i.horas) || 0,
-        Number(i.valor) || 0
-      ])
-    ];
-
-    const wb = XLSX.utils.book_new();
-    const ws = XLSX.utils.aoa_to_sheet(ws_data);
-    XLSX.utils.book_append_sheet(wb, ws, 'Inventário');
-
-    const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    const blob = new Blob([wbout], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-    sendBlobToNativeOrDownload(blob, 'inventario.xlsx');
-  } catch (err) {
-    console.error('Erro ao gerar Excel:', err);
-    alert('Erro ao gerar Excel. Veja console.');
-  }
-}
-
-/* Stubs / utilitários para outras ações */
-function syncData() { alert('syncData() não implementada ainda.'); }
-function exportBackupMensal() { alert('exportBackupMensal() não implementada ainda.'); }
-function importBackupMensal(event) {
-  const file = event.target.files && event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = () => {
-    try {
-      const data = JSON.parse(reader.result);
-      inventoryData = (data || []).map(i => ({
-        om: i?.om || '',
-        patrimonio: i?.patrimonio || '',
-        nome: i?.nome || '',
-        horas: Number(i?.horas) || 0,
-        valor: Number(i?.valor) || 0
-      }));
-      saveData();
-      load();
-      alert('Importação concluída');
-    } catch (e) {
-      console.error('Erro importando JSON:', e);
-      alert('Arquivo JSON inválido.');
+// Inicializa
+load();
+</script>
+</body>
+        </html>      alert('Arquivo JSON inválido.');
     }
   };
   reader.readAsText(file);
