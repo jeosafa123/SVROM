@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sistema Oficina - Turbo v6.1</title>
+<title>Sistema Oficina - Profissional v6.3</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f1720">
@@ -39,7 +39,6 @@ input, select {
 button { padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font-weight: bold; transition: 0.2s; }
 .btn-main { background:#2b9cff; color: white; width: 100%; margin-top: 20px; font-size: 16px; }
 .btn-red { background:#dc2626; color: white; }
-.btn-green { background:#16a34a; color: white; }
 .btn-blue { background:#2563eb; color: white; }
 .btn-share { background:#8b5cf6; color: white; }
 .btn-sync { background:#0ea5e9; color: white; border: 2px solid #0284c7; }
@@ -105,8 +104,8 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;">
         <button id="btnPdf" onclick="shareFile('pdf')" class="btn-share">📤 PDF</button>
         <button id="btnExcel" onclick="shareFile('excel')" class="btn-share">📤 Excel</button>
-        <button onclick="syncData()" class="btn-sync">☁️ Sincronizar Tudo (Nuvem)</button>
-        <button onclick="deleteSelected()" class="btn-red" style="margin-left: auto;">🗑️ Excluir Selecionados</button>
+        <button onclick="syncData()" class="btn-sync">☁️ Sincronizar Nuvem (Limpar Local)</button>
+        <button onclick="deleteSelected()" class="btn-red" style="margin-left: auto;">🗑️ Excluir</button>
       </div>
 
       <input type="text" id="searchInput" placeholder="🔍 Pesquisar..." onkeyup="load()" style="margin-bottom: 15px; border: 1px solid #2b9cff;">
@@ -129,11 +128,11 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
 </div>
 
 <script>
-/* ===== CONFIGURAÇÃO GOOGLE SHEETS ===== */
+/* ===== CONFIGURAÇÕES ===== */
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1gF93QyFH9mYuE2Nm3XYgdvQ19JNfR5HvM9uSLmGBzab2QmFlowN3oCZvjmG7YoLf/exec";
 const TOKEN = "OFICINA-SEGURA-123";
 
-/* TABELA DE PREÇOS */
+/* DADOS DO BANCO (ORIGINAIS MANTIDOS) */
 const tabelaPrecos = [
   { nome: "ACABADORA DE SUPERFICIE", valor: 2.00, horas: 5.0 },
   { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
@@ -170,16 +169,11 @@ const tabelaPrecos = [
   { nome: "PERFURATRIZ", valor: 25.00, horas: 6.0 }
 ];
 
-// Preenche o Select
 const select = document.getElementById("nome");
 tabelaPrecos.forEach(i => select.innerHTML += `<option value="${i.nome}">${i.nome}</option>`);
 
-/* LÓGICA DE DADOS */
+/* FUNÇÕES DE INTERFACE */
 let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || [];
-
-function saveData() {
-  localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-}
 
 function openTab(tabId, btn) {
   document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
@@ -207,13 +201,12 @@ function addItem() {
     valor: Number(document.getElementById("valor").value) || 0
   };
 
-  if (!item.om || !item.nome) return alert("OM e Nome são obrigatórios!");
+  if (!item.om || !item.nome) return alert("OM e Equipamento são obrigatórios!");
 
   inventoryData.push(item);
-  saveData();
+  localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
   load();
-  alert("Item adicionado!");
-  // Limpa campos
+  alert("Adicionado!");
   document.getElementById("om").value = "";
   document.getElementById("patrimonio").value = "";
 }
@@ -226,10 +219,8 @@ function load() {
 
   inventoryData.forEach((i, idx) => {
     if (termo && !`${i.om} ${i.patrimonio} ${i.nome}`.toLowerCase().includes(termo)) return;
-    
     th += i.horas;
     tv += (i.horas * i.valor);
-
     tbody.innerHTML += `<tr>
       <td><input type="checkbox" class="row-select" data-index="${idx}"></td>
       <td>${i.om}</td>
@@ -239,19 +230,17 @@ function load() {
       <td>R$ ${i.valor.toFixed(2)}</td>
     </tr>`;
   });
-
   document.getElementById("totalHorasEntrada").innerText = th.toFixed(2);
   document.getElementById("totalValorEntrada").innerText = "R$ " + tv.toFixed(2);
 }
 
-/* ===== SINCRONIZAÇÃO TURBO COM LIMPEZA AUTOMÁTICA ===== */
+/* ===== SINCRONIZAÇÃO TURBO ===== */
 async function syncData() {
   if (inventoryData.length === 0) return alert("Não há nada para sincronizar.");
-  
-  if (!confirm("Isso enviará " + inventoryData.length + " itens para a nuvem e limpará sua lista local. Continuar?")) return;
+  if (!confirm(`Deseja enviar ${inventoryData.length} registros para a planilha?`)) return;
 
   const btn = document.querySelector('.btn-sync');
-  btn.innerText = "🚀 Sincronizando...";
+  btn.innerText = "🚀 Enviando...";
   btn.disabled = true;
 
   try {
@@ -265,20 +254,44 @@ async function syncData() {
       })
     });
 
-    // SUCESSO - Limpar tudo
-    alert("☁️ Sucesso! Dados enviados para a planilha.");
-    
-    inventoryData = []; // Limpa o array
-    saveData();        // Salva vazio no LocalStorage
-    load();            // Atualiza a tabela (ficará vazia)
+    alert("☁️ Sincronização Concluída!\nA lista local foi limpa.");
+    inventoryData = [];
+    localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
+    load();
 
   } catch (e) {
     alert("Erro na conexão!");
     console.error(e);
   } finally {
-    btn.innerText = "☁️ Sincronizar Tudo (Nuvem)";
+    btn.innerText = "☁️ Sincronizar Nuvem (Limpar Local)";
     btn.disabled = false;
   }
+}
+
+/* EXPORTAÇÕES (MANTIDAS DO ORIGINAL) */
+function shareFile(type) {
+  if (type === 'pdf') generatePDF();
+  else generateExcel();
+}
+
+function generatePDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.text("Inventário Oficina", 14, 15);
+  const rows = inventoryData.map(i => [i.om, i.patrimonio, i.nome, i.horas, i.valor]);
+  doc.autoTable({
+    head: [['OM', 'Patrimônio', 'Equipamento', 'Horas', 'Valor']],
+    body: rows,
+    startY: 20
+  });
+  doc.save("inventario.pdf");
+}
+
+function generateExcel() {
+  const ws = XLSX.utils.json_to_sheet(inventoryData);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Inventário");
+  XLSX.writeFile(wb, "inventario.xlsx");
 }
 
 function deleteSelected() {
@@ -286,7 +299,7 @@ function deleteSelected() {
   if (!checks.length || !confirm("Excluir selecionados?")) return;
   const idxs = Array.from(checks).map(c => parseInt(c.getAttribute('data-index'))).sort((a,b)=>b-a);
   idxs.forEach(i => inventoryData.splice(i, 1));
-  saveData();
+  localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
   load();
 }
 
@@ -294,17 +307,6 @@ function toggleAll(source) {
   document.querySelectorAll(".row-select").forEach(c => c.checked = source.checked);
 }
 
-// Inicializa
-load();
-</script>
-</body>
-        </html>      alert('Arquivo JSON inválido.');
-    }
-  };
-  reader.readAsText(file);
-}
-
-/* Inicializa a tela */
 load();
 </script>
 </body>
