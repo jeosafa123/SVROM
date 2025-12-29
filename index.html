@@ -390,7 +390,10 @@ function importBackupMensal(event) {
   };
   reader.readAsText(file);
 }
-<!-- ================= GOOGLE SHEETS SYNC ================= -->
+
+initData();
+load();
+  <!-- ================= GOOGLE SHEETS SYNC ================= -->
 <script>
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwANrGm4-M-5gqb74eQ4YDEujizkIUAhqXKI_gf5v_6-e-u9m-TQrvxULS_fdtXq7CN/exec";
 const TOKEN = "OFICINA-SEGURA-123";
@@ -452,8 +455,6 @@ async function syncData() {
 </script>
 <!-- ================= FIM GOOGLE SHEETS ================= -->
 
-initData();
-load();
 </script>
 </body>
 </html>
