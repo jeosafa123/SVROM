@@ -3,51 +3,55 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sistema Oficina - Turbo v8.5</title>
+<title>Sistema Oficina - Smart Scan v9.5</title>
 
-<link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#0f1720">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-/* Estilização Geral (Mantida do seu original) */
+/* Estilização Profissional v4.7 */
 body { font-family: 'Segoe UI', sans-serif; background:#0f1720; color:#e6eef6; margin:0; padding:20px; }
 .container { max-width:1100px; margin:0 auto; }
 h1 { text-align:center; color: #2b9cff; margin-bottom: 30px; }
+.card { background:#14212d; padding:25px; border-radius:12px; margin-bottom:20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 .tab-container { display: flex; border-bottom: 2px solid #2a3a4d; margin-bottom: 20px; gap: 5px; }
-.tab-button { background: #14212d; color: #98a3b3; border: none; padding: 12px 25px; cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; transition: 0.3s; }
+.tab-button { background: #14212d; color: #98a3b3; border: none; padding: 12px 25px; cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; }
 .tab-button.active { background: #2b9cff; color: white; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
-.card { background:#14212d; padding:25px; border-radius:12px; margin-bottom:20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 label { display:block; margin-top:12px; font-weight: 600; color: #a0aec0; }
 input, select { width:100%; padding:12px; border-radius:6px; border:1px solid #2a3a4d; background:#0d1a24; color:#fff; box-sizing: border-box; margin-top: 5px; font-size: 15px; }
 .row { display:flex; gap:15px; flex-wrap: wrap; }
 .row > * { flex:1; min-width: 200px; }
 button { padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font-weight: bold; transition: 0.2s; }
 .btn-main { background:#2b9cff; color: white; width: 100%; margin-top: 20px; font-size: 16px; }
+.btn-scan { background: #0ea5e9; color: white; margin-bottom: 15px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; border: 2px dashed #2b9cff; }
 .btn-red { background:#dc2626; color: white; }
 .btn-blue { background:#2563eb; color: white; }
-.btn-share { background:#8b5cf6; color: white; }
 .btn-sync { background:#0ea5e9; color: white; border: 2px solid #0284c7; }
 table { width:100%; border-collapse:collapse; margin-top:15px; background: #0d1a24; border-radius: 8px; overflow: hidden; }
-th, td { padding:15px; border-bottom: 1px solid #2a3a4d; text-align: left; }
+th, td { padding:12px; border-bottom: 1px solid #2a3a4d; text-align: left; }
 th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 11px; }
-.stat-box { background:#0d1a24; padding:15px; border-radius:8px; text-align: center; border: 1px solid #2a3a4d; }
-.stat-val { font-size: 1.8em; font-weight: bold; color: #4ade80; }
+.loading-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; flex-direction:column; align-items:center; justify-content:center; }
+.loader-spin { border: 4px solid #f3f3f3; border-top: 4px solid #2b9cff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 </head>
 
 <body>
+<div id="loader" class="loading-overlay">
+    <div class="loader-spin"></div>
+    <p id="status-ocr" style="margin-top:15px; color:#2b9cff; font-weight:bold;">Lendo Imagem...</p>
+</div>
+
 <div class="container">
   <h1>Gestão Oficina Mecânica</h1>
 
   <div class="card" style="border-left: 5px solid #2b9cff;">
-    <label>Técnico / Responsável</label>
-    <input id="usuario_nome" placeholder="Digite seu nome antes de sincronizar" style="border: 1px solid #2b9cff;">
+    <label>Mecânico / Técnico Responsável</label>
+    <input id="usuario_nome" placeholder="Digite seu nome para a planilha" style="border: 1px solid #2b9cff;">
   </div>
 
   <div class="tab-container">
@@ -57,56 +61,47 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
 
   <div id="tab-entrada" class="tab-content active">
     <div class="card">
+      <label class="btn-scan">
+        📷 ESCANEAR FICHA (Câmera Inteligente)
+        <input type="file" accept="image/*" capture="camera" hidden onchange="processarImagem(event)">
+      </label>
+
       <div class="row">
-        <div><label>OM</label><input id="om" placeholder="Ex: 198"></div>
-        <div><label>Patrimônio</label><input id="patrimonio" placeholder="Ex: 102030"></div>
+        <div><label>OM</label><input id="om" placeholder="Extraído via câmera"></div>
+        <div><label>Patrimônio</label><input id="patrimonio" placeholder="Extraído via câmera"></div>
       </div>
-      <label>Equipamento</label>
+      
+      <label>Equipamento (Tabela Automática)</label>
       <select id="nome" onchange="autoPreencher()">
         <option value="">-- Selecione o item --</option>
       </select>
+
       <div class="row">
         <div><label>Horas</label><input id="horas" type="number" step="0.01"></div>
         <div><label>Valor Unitário (R$)</label><input id="valor" type="number" step="0.01"></div>
       </div>
-      <button class="btn-main" onclick="addItem()">ADICIONAR AO INVENTÁRIO</button>
-    </div>
-    
-    <div class="card">
-      <div class="row">
-        <div class="stat-box">
-          <div style="color:#98a3b3;">Horas Acumuladas</div>
-          <div id="totalHorasEntrada" class="stat-val" style="color:#fff">0.00</div>
-        </div>
-        <div class="stat-box">
-          <div style="color:#98a3b3;">Custo Acumulado</div>
-          <div id="totalValorEntrada" class="stat-val">R$ 0,00</div>
-        </div>
-      </div>
+      <button class="btn-main" onclick="addItem()">SALVAR NO DISPOSITIVO</button>
     </div>
   </div>
 
   <div id="tab-inventario" class="tab-content">
     <div class="card">
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;">
-        <button onclick="generatePDF()" class="btn-share">📤 PDF</button>
-        <button onclick="generateExcel()" class="btn-share">📤 Excel</button>
-        <button onclick="syncData()" class="btn-sync">☁️ Sincronizar (Nuvem)</button>
-        <button onclick="exportBackupMensal()" class="btn-blue">📥 Backup JSON</button>
-        <label class="btn-blue" style="padding: 10px 15px; border-radius: 8px; cursor: pointer;">
-          ♻️ Importar <input type="file" accept=".json" hidden onchange="importBackupMensal(event)">
-        </label>
+        <button onclick="generatePDF()" class="btn-blue">📥 PDF</button>
+        <button onclick="generateExcel()" style="background:#16a34a; color:white;">📥 Excel</button>
+        <button onclick="syncData()" class="btn-sync">☁️ Sincronizar Nuvem</button>
+        <button onclick="exportBackupMensal()" class="btn-blue">📦 Backup JSON</button>
         <button onclick="limparTudoLocal()" class="btn-red" style="margin-left: auto;">🗑️ Limpar App</button>
       </div>
 
-      <input type="text" id="searchInput" placeholder="🔍 Pesquisar..." onkeyup="load()" style="margin-bottom: 15px; border: 1px solid #2b9cff;">
+      <input type="text" id="searchInput" placeholder="🔍 Pesquisar na lista..." onkeyup="load()" style="margin-bottom: 15px; border: 1px solid #2b9cff;">
 
       <table>
         <thead>
           <tr>
             <th style="width: 20px;"><input type="checkbox" onclick="toggleAll(this)"></th>
             <th>OM</th>
-            <th>Patrimônio</th>
+            <th>Patr.</th>
             <th>Equipamento</th>
             <th>Horas</th>
             <th>Valor</th>
@@ -119,11 +114,10 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
 </div>
 
 <script>
-/* CONFIGURAÇÕES */
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw6C0okqCdoWJDk2ONc9DFsclS_j330Kqv0o1h0TWZPbZPRsxx4jg8_49cdzP8F4fSO/exec";
+/* DADOS E CONFIGURAÇÕES */
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1gF93QyFH9mYuE2Nm3XYgdvQ19JNfR5HvM9uSLmGBzab2QmFlowN3oCZvjmG7YoLf/exec";
 const TOKEN = "OFICINA-SEGURA-123";
 
-/* TABELA DE PREÇOS COMPLETA (MANTIDA) */
 const tabelaPrecos = [
   { nome: "ACABADORA DE SUPERFICIE", valor: 2.00, horas: 5.0 },
   { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
@@ -160,149 +154,136 @@ const tabelaPrecos = [
   { nome: "PERFURATRIZ", valor: 25.00, horas: 6.0 }
 ];
 
+let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || [];
 const select = document.getElementById("nome");
 tabelaPrecos.forEach(i => select.innerHTML += `<option value="${i.nome}">${i.nome}</option>`);
 
-let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || [];
+/* CÂMERA INTELIGENTE (OCR) */
+async function processarImagem(event) {
+    const file = event.target.files[0];
+    if (!file) return;
 
+    document.getElementById('loader').style.display = 'flex';
+    const statusText = document.getElementById('status-ocr');
+
+    try {
+        statusText.innerText = "Reconhecendo texto...";
+        const result = await Tesseract.recognize(file, 'por', {
+            logger: m => { if(m.status === 'recognizing text') statusText.innerText = `Lendo: ${Math.round(m.progress * 100)}%`; }
+        });
+
+        const text = result.data.text.toUpperCase();
+        
+        // Identifica OM e Patrimônio pelos padrões circulados na imagem
+        const omMatch = text.match(/OM\s*N[º°\s]*(\d+)/) || text.match(/N[º°\s]*(\d{5,})/);
+        const patMatch = text.match(/PATRIM[ÔO]NIO[:\s]*(\d+)/);
+
+        if (omMatch) document.getElementById('om').value = omMatch[1];
+        if (patMatch) document.getElementById('patrimonio').value = patMatch[1];
+
+        if(!omMatch && !patMatch) alert("Atenção: A foto pode estar tremida. Não consegui ler os números.");
+        
+    } catch (e) { alert("Erro ao processar imagem."); } 
+    finally { document.getElementById('loader').style.display = 'none'; }
+}
+
+/* LÓGICA DE INTERFACE */
 function openTab(tabId, btn) {
-  document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
-  document.querySelectorAll('.tab-button').forEach(tb => tb.classList.remove('active'));
-  document.getElementById(tabId).classList.add('active');
-  if (btn) btn.classList.add('active');
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    document.querySelectorAll('.tab-button').forEach(tb => tb.classList.remove('active'));
+    document.getElementById(tabId).classList.add('active');
+    if (btn) btn.classList.add('active');
 }
 
 function autoPreencher() {
-  const item = tabelaPrecos.find(i => i.nome === select.value);
-  if (item) {
-    document.getElementById("horas").value = item.horas;
-    document.getElementById("valor").value = item.valor.toFixed(2);
-  }
+    const item = tabelaPrecos.find(i => i.nome === select.value);
+    if (item) {
+        document.getElementById("horas").value = item.horas;
+        document.getElementById("valor").value = item.valor.toFixed(2);
+    }
 }
 
 function addItem() {
-  const item = {
-    id: "ID-" + Date.now(),
-    data: new Date().toLocaleDateString('pt-BR'),
-    om: document.getElementById("om").value,
-    patrimonio: document.getElementById("patrimonio").value,
-    nome: select.value,
-    horas: Number(document.getElementById("horas").value) || 0,
-    valor: Number(document.getElementById("valor").value) || 0
-  };
-  if (!item.om || !item.nome) return alert("OM e Equipamento são obrigatórios!");
-  inventoryData.push(item);
-  localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-  load();
-  alert("Salvo no celular!");
-  document.getElementById("om").value = "";
-  document.getElementById("patrimonio").value = "";
+    const item = {
+        id: "ID-" + Date.now(),
+        data: new Date().toLocaleDateString('pt-BR'),
+        om: document.getElementById("om").value,
+        patrimonio: document.getElementById("patrimonio").value,
+        nome: select.value,
+        horas: Number(document.getElementById("horas").value) || 0,
+        valor: Number(document.getElementById("valor").value) || 0
+    };
+    if (!item.om || !item.nome) return alert("OM e Equipamento são obrigatórios!");
+    inventoryData.push(item);
+    localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
+    load();
+    alert("Salvo no celular!");
 }
 
 function load() {
-  const termo = document.getElementById("searchInput").value.toLowerCase();
-  const tbody = document.getElementById("lista");
-  tbody.innerHTML = "";
-  let th = 0, tv = 0;
-  inventoryData.forEach((i, idx) => {
-    if (termo && !`${i.om} ${i.patrimonio} ${i.nome}`.toLowerCase().includes(termo)) return;
-    th += i.horas; tv += (i.horas * i.valor);
-    tbody.innerHTML += `<tr>
-      <td><input type="checkbox" class="row-select" data-index="${idx}"></td>
-      <td>${i.om}</td><td>${i.patrimonio}</td><td>${i.nome}</td>
-      <td>${Number(i.horas).toFixed(2)}</td><td>R$ ${Number(i.valor).toFixed(2)}</td>
-    </tr>`;
-  });
-  document.getElementById("totalHorasEntrada").innerText = th.toFixed(2);
-  document.getElementById("totalValorEntrada").innerText = "R$ " + tv.toFixed(2);
-}
-
-/* SINCRONIZAÇÃO (Mantendo os dados no app) */
-async function syncData() {
-  const tecnico = document.getElementById("usuario_nome").value;
-  if(!tecnico) return alert("Digite seu nome antes de enviar!");
-  if (inventoryData.length === 0) return alert("Nada para sincronizar.");
-
-  const btn = document.querySelector('.btn-sync');
-  btn.innerText = "🚀 Enviando...";
-  btn.disabled = true;
-
-  try {
-    await fetch(GOOGLE_SCRIPT_URL, {
-      method: "POST",
-      mode: "no-cors",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ token: TOKEN, usuario: tecnico, itens: inventoryData })
+    const termo = document.getElementById("searchInput").value.toLowerCase();
+    const tbody = document.getElementById("lista");
+    tbody.innerHTML = "";
+    inventoryData.forEach((i, idx) => {
+        if (termo && !`${i.om} ${i.patrimonio} ${i.nome}`.toLowerCase().includes(termo)) return;
+        tbody.innerHTML += `<tr>
+            <td><input type="checkbox" class="row-select" data-index="${idx}"></td>
+            <td>${i.om}</td><td>${i.patrimonio}</td><td>${i.nome}</td>
+            <td>${Number(i.horas).toFixed(2)}</td><td>R$ ${Number(i.valor).toFixed(2)}</td>
+        </tr>`;
     });
-    alert("☁️ Sincronizado! Os dados estão na sua planilha organizada por mês.");
-  } catch (e) {
-    alert("Erro na conexão!");
-  } finally {
-    btn.innerText = "☁️ Sincronizar (Nuvem)";
-    btn.disabled = false;
-  }
 }
 
-/* EXPORTAÇÕES (ORIGINAIS REINTEGRADAS) */
-function sendBlobToNativeOrDownload(blob, filename) {
-  const reader = new FileReader();
-  reader.onloadend = () => {
-    const base64 = reader.result.split(',')[1];
-    if (window.Android && window.Android.downloadFile) window.Android.downloadFile(base64, filename);
-    else {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
-    }
-  };
-  reader.readAsDataURL(blob);
+/* SINCRONIZAÇÃO E BACKUP */
+async function syncData() {
+    const tecnico = document.getElementById("usuario_nome").value;
+    if(!tecnico) return alert("ERRO: Digite seu nome antes de sincronizar!");
+    if (inventoryData.length === 0) return alert("Lista vazia.");
+
+    const btn = document.querySelector('.btn-sync');
+    btn.innerText = "🚀 Enviando...";
+    btn.disabled = true;
+
+    try {
+        await fetch(GOOGLE_SCRIPT_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ token: TOKEN, usuario: tecnico, itens: inventoryData })
+        });
+        alert("☁️ Sucesso! Dados enviados para a planilha (Aba Mensal).");
+    } catch (e) { alert("Erro de conexão."); } 
+    finally { btn.innerText = "☁️ Sincronizar Nuvem"; btn.disabled = false; }
 }
 
 function generatePDF() {
-  const { jsPDF } = window.jspdf;
-  const doc = new jsPDF();
-  doc.text("Inventário Oficina", 14, 15);
-  const rows = inventoryData.map(i => [i.om, i.patrimonio, i.nome, i.horas.toFixed(2), i.valor.toFixed(2)]);
-  doc.autoTable({ head: [['OM', 'Patrimônio', 'Equipamento', 'Horas', 'Valor']], body: rows, startY: 20 });
-  sendBlobToNativeOrDownload(doc.output('blob'), 'oficina.pdf');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    doc.text("Relatório Oficina", 14, 15);
+    const rows = inventoryData.map(i => [i.om, i.patrimonio, i.nome, i.horas, i.valor]);
+    doc.autoTable({ head: [['OM', 'Patr.', 'Item', 'Horas', 'Valor']], body: rows, startY: 20 });
+    doc.save("oficina.pdf");
 }
 
 function generateExcel() {
-  const ws = XLSX.utils.json_to_sheet(inventoryData);
-  const wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "Inventário");
-  const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-  sendBlobToNativeOrDownload(new Blob([wbout], {type:"application/octet-stream"}), 'oficina.xlsx');
+    const ws = XLSX.utils.json_to_sheet(inventoryData);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Dados");
+    XLSX.writeFile(wb, "oficina.xlsx");
 }
 
 function exportBackupMensal() {
-  const blob = new Blob([JSON.stringify(inventoryData, null, 2)], {type: "application/json"});
-  sendBlobToNativeOrDownload(blob, 'backup_oficina.json');
-}
-
-function importBackupMensal(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    inventoryData = JSON.parse(e.target.result);
-    localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-    load();
-    alert("Backup Importado!");
-  };
-  reader.readAsText(file);
+    const blob = new Blob([JSON.stringify(inventoryData)], {type: "application/json"});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'backup.json'; a.click();
 }
 
 function limparTudoLocal() {
-  if(confirm("Isso apagará os dados APENAS deste celular. Continuar?")) {
-    inventoryData = [];
-    localStorage.removeItem("oficina_inventory");
-    load();
-  }
+    if(confirm("Deseja apagar os dados do celular? (Certifique-se de ter sincronizado)")) {
+        inventoryData = []; localStorage.removeItem("oficina_inventory"); load();
+    }
 }
 
-function toggleAll(source) {
-  document.querySelectorAll(".row-select").forEach(c => c.checked = source.checked);
-}
+function toggleAll(source) { document.querySelectorAll(".row-select").forEach(c => c.checked = source.checked); }
 
 load();
 </script>
