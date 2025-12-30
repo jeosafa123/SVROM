@@ -3,52 +3,35 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sistema Oficina - Profissional v7.0</title>
+<title>Sistema Oficina - Turbo v8.5</title>
 
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0f1720">
 
 <style>
-/* Estilização Geral */
+/* Estilização Geral (Mantida do seu original) */
 body { font-family: 'Segoe UI', sans-serif; background:#0f1720; color:#e6eef6; margin:0; padding:20px; }
 .container { max-width:1100px; margin:0 auto; }
 h1 { text-align:center; color: #2b9cff; margin-bottom: 30px; }
-
-/* Sistema de Abas */
 .tab-container { display: flex; border-bottom: 2px solid #2a3a4d; margin-bottom: 20px; gap: 5px; }
-.tab-button {
-  background: #14212d; color: #98a3b3; border: none; padding: 12px 25px;
-  cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; transition: 0.3s;
-}
+.tab-button { background: #14212d; color: #98a3b3; border: none; padding: 12px 25px; cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; transition: 0.3s; }
 .tab-button.active { background: #2b9cff; color: white; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
-
-/* Cards e Forms */
 .card { background:#14212d; padding:25px; border-radius:12px; margin-bottom:20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
 label { display:block; margin-top:12px; font-weight: 600; color: #a0aec0; }
-input, select {
-  width:100%; padding:12px; border-radius:6px;
-  border:1px solid #2a3a4d; background:#0d1a24; color:#fff;
-  box-sizing: border-box; margin-top: 5px; font-size: 15px;
-}
+input, select { width:100%; padding:12px; border-radius:6px; border:1px solid #2a3a4d; background:#0d1a24; color:#fff; box-sizing: border-box; margin-top: 5px; font-size: 15px; }
 .row { display:flex; gap:15px; flex-wrap: wrap; }
 .row > * { flex:1; min-width: 200px; }
-
-/* Botões */
 button { padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font-weight: bold; transition: 0.2s; }
 .btn-main { background:#2b9cff; color: white; width: 100%; margin-top: 20px; font-size: 16px; }
 .btn-red { background:#dc2626; color: white; }
 .btn-blue { background:#2563eb; color: white; }
 .btn-share { background:#8b5cf6; color: white; }
 .btn-sync { background:#0ea5e9; color: white; border: 2px solid #0284c7; }
-
-/* Tabela */
 table { width:100%; border-collapse:collapse; margin-top:15px; background: #0d1a24; border-radius: 8px; overflow: hidden; }
 th, td { padding:15px; border-bottom: 1px solid #2a3a4d; text-align: left; }
 th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 11px; }
-
-/* Dashboard */
 .stat-box { background:#0d1a24; padding:15px; border-radius:8px; text-align: center; border: 1px solid #2a3a4d; }
 .stat-val { font-size: 1.8em; font-weight: bold; color: #4ade80; }
 </style>
@@ -62,6 +45,11 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
 <div class="container">
   <h1>Gestão Oficina Mecânica</h1>
 
+  <div class="card" style="border-left: 5px solid #2b9cff;">
+    <label>Técnico / Responsável</label>
+    <input id="usuario_nome" placeholder="Digite seu nome antes de sincronizar" style="border: 1px solid #2b9cff;">
+  </div>
+
   <div class="tab-container">
     <button class="tab-button active" onclick="openTab('tab-entrada', this)">📝 Lançamento</button>
     <button class="tab-button" onclick="openTab('tab-inventario', this)">📋 Banco de Dados</button>
@@ -69,12 +57,11 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
 
   <div id="tab-entrada" class="tab-content active">
     <div class="card">
-      <h2>Novo Registro</h2>
       <div class="row">
         <div><label>OM</label><input id="om" placeholder="Ex: 198"></div>
         <div><label>Patrimônio</label><input id="patrimonio" placeholder="Ex: 102030"></div>
       </div>
-      <label>Equipamento (Tabela Automática)</label>
+      <label>Equipamento</label>
       <select id="nome" onchange="autoPreencher()">
         <option value="">-- Selecione o item --</option>
       </select>
@@ -104,12 +91,12 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;">
         <button onclick="generatePDF()" class="btn-share">📤 PDF</button>
         <button onclick="generateExcel()" class="btn-share">📤 Excel</button>
-        <button onclick="syncData()" class="btn-sync">☁️ Sincronizar Nuvem</button>
+        <button onclick="syncData()" class="btn-sync">☁️ Sincronizar (Nuvem)</button>
         <button onclick="exportBackupMensal()" class="btn-blue">📥 Backup JSON</button>
         <label class="btn-blue" style="padding: 10px 15px; border-radius: 8px; cursor: pointer;">
           ♻️ Importar <input type="file" accept=".json" hidden onchange="importBackupMensal(event)">
         </label>
-        <button onclick="deleteSelected()" class="btn-red" style="margin-left: auto;">🗑️ Excluir</button>
+        <button onclick="limparTudoLocal()" class="btn-red" style="margin-left: auto;">🗑️ Limpar App</button>
       </div>
 
       <input type="text" id="searchInput" placeholder="🔍 Pesquisar..." onkeyup="load()" style="margin-bottom: 15px; border: 1px solid #2b9cff;">
@@ -132,11 +119,11 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
 </div>
 
 <script>
-/* ===== CONFIGURAÇÕES GOOGLE SHEETS ===== */
+/* CONFIGURAÇÕES */
 const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1gF93QyFH9mYuE2Nm3XYgdvQ19JNfR5HvM9uSLmGBzab2QmFlowN3oCZvjmG7YoLf/exec";
 const TOKEN = "OFICINA-SEGURA-123";
 
-/* TABELA DE PREÇOS ORIGINAL */
+/* TABELA DE PREÇOS COMPLETA (MANTIDA) */
 const tabelaPrecos = [
   { nome: "ACABADORA DE SUPERFICIE", valor: 2.00, horas: 5.0 },
   { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
@@ -176,12 +163,7 @@ const tabelaPrecos = [
 const select = document.getElementById("nome");
 tabelaPrecos.forEach(i => select.innerHTML += `<option value="${i.nome}">${i.nome}</option>`);
 
-/* LÓGICA DE DADOS */
 let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || [];
-
-function saveData() {
-  localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-}
 
 function openTab(tabId, btn) {
   document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
@@ -208,13 +190,11 @@ function addItem() {
     horas: Number(document.getElementById("horas").value) || 0,
     valor: Number(document.getElementById("valor").value) || 0
   };
-
   if (!item.om || !item.nome) return alert("OM e Equipamento são obrigatórios!");
-
   inventoryData.push(item);
-  saveData();
+  localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
   load();
-  alert("Item adicionado ao banco local!");
+  alert("Salvo no celular!");
   document.getElementById("om").value = "";
   document.getElementById("patrimonio").value = "";
 }
@@ -224,31 +204,24 @@ function load() {
   const tbody = document.getElementById("lista");
   tbody.innerHTML = "";
   let th = 0, tv = 0;
-
   inventoryData.forEach((i, idx) => {
     if (termo && !`${i.om} ${i.patrimonio} ${i.nome}`.toLowerCase().includes(termo)) return;
-    
-    th += i.horas;
-    tv += (i.horas * i.valor);
-
+    th += i.horas; tv += (i.horas * i.valor);
     tbody.innerHTML += `<tr>
       <td><input type="checkbox" class="row-select" data-index="${idx}"></td>
-      <td>${i.om}</td>
-      <td>${i.patrimonio}</td>
-      <td>${i.nome}</td>
-      <td>${Number(i.horas).toFixed(2)}</td>
-      <td>R$ ${Number(i.valor).toFixed(2)}</td>
+      <td>${i.om}</td><td>${i.patrimonio}</td><td>${i.nome}</td>
+      <td>${Number(i.horas).toFixed(2)}</td><td>R$ ${Number(i.valor).toFixed(2)}</td>
     </tr>`;
   });
-
   document.getElementById("totalHorasEntrada").innerText = th.toFixed(2);
   document.getElementById("totalValorEntrada").innerText = "R$ " + tv.toFixed(2);
 }
 
-/* ===== SINCRONIZAÇÃO EM LOTE ===== */
+/* SINCRONIZAÇÃO (Mantendo os dados no app) */
 async function syncData() {
-  if (inventoryData.length === 0) return alert("Não há nada para sincronizar.");
-  if (!confirm(`Enviar ${inventoryData.length} registros para a nuvem e limpar lista local?`)) return;
+  const tecnico = document.getElementById("usuario_nome").value;
+  if(!tecnico) return alert("Digite seu nome antes de enviar!");
+  if (inventoryData.length === 0) return alert("Nada para sincronizar.");
 
   const btn = document.querySelector('.btn-sync');
   btn.innerText = "🚀 Enviando...";
@@ -259,37 +232,26 @@ async function syncData() {
       method: "POST",
       mode: "no-cors",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        token: TOKEN,
-        itens: inventoryData
-      })
+      body: JSON.stringify({ token: TOKEN, usuario: tecnico, itens: inventoryData })
     });
-
-    alert("☁️ Sincronização Concluída!\nOs dados estão na planilha e a lista local foi limpa.");
-    inventoryData = [];
-    saveData();
-    load();
+    alert("☁️ Sincronizado! Os dados estão na sua planilha organizada por mês.");
   } catch (e) {
-    alert("Erro ao conectar com a planilha.");
-    console.error(e);
+    alert("Erro na conexão!");
   } finally {
-    btn.innerText = "☁️ Sincronizar Nuvem";
+    btn.innerText = "☁️ Sincronizar (Nuvem)";
     btn.disabled = false;
   }
 }
 
-/* ===== EXPORTAÇÕES E BACKUP (ORIGINAIS) ===== */
+/* EXPORTAÇÕES (ORIGINAIS REINTEGRADAS) */
 function sendBlobToNativeOrDownload(blob, filename) {
   const reader = new FileReader();
   reader.onloadend = () => {
     const base64 = reader.result.split(',')[1];
-    if (window.Android && window.Android.downloadFile) {
-       window.Android.downloadFile(base64, filename);
-    } else {
-       const url = URL.createObjectURL(blob);
-       const a = document.createElement('a');
-       a.href = url; a.download = filename;
-       document.body.appendChild(a); a.click(); a.remove();
+    if (window.Android && window.Android.downloadFile) window.Android.downloadFile(base64, filename);
+    else {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
     }
   };
   reader.readAsDataURL(blob);
@@ -300,24 +262,16 @@ function generatePDF() {
   const doc = new jsPDF();
   doc.text("Inventário Oficina", 14, 15);
   const rows = inventoryData.map(i => [i.om, i.patrimonio, i.nome, i.horas.toFixed(2), i.valor.toFixed(2)]);
-  doc.autoTable({
-    head: [['OM', 'Patrimônio', 'Equipamento', 'Horas', 'Valor Unit.']],
-    body: rows,
-    startY: 20
-  });
-  sendBlobToNativeOrDownload(doc.output('blob'), 'inventario.pdf');
+  doc.autoTable({ head: [['OM', 'Patrimônio', 'Equipamento', 'Horas', 'Valor']], body: rows, startY: 20 });
+  sendBlobToNativeOrDownload(doc.output('blob'), 'oficina.pdf');
 }
 
 function generateExcel() {
-  const ws_data = [
-    ['OM','Patrimônio','Equipamento','Horas','Valor Unit.'],
-    ...inventoryData.map(i => [i.om, i.patrimonio, i.nome, i.horas, i.valor])
-  ];
+  const ws = XLSX.utils.json_to_sheet(inventoryData);
   const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.aoa_to_sheet(ws_data);
   XLSX.utils.book_append_sheet(wb, ws, "Inventário");
   const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-  sendBlobToNativeOrDownload(new Blob([wbout], {type:"application/octet-stream"}), 'inventario.xlsx');
+  sendBlobToNativeOrDownload(new Blob([wbout], {type:"application/octet-stream"}), 'oficina.xlsx');
 }
 
 function exportBackupMensal() {
@@ -330,24 +284,20 @@ function importBackupMensal(event) {
   if (!file) return;
   const reader = new FileReader();
   reader.onload = (e) => {
-    try {
-      const data = JSON.parse(e.target.result);
-      inventoryData = data;
-      saveData();
-      load();
-      alert("Backup importado!");
-    } catch(err) { alert("Arquivo JSON inválido."); }
+    inventoryData = JSON.parse(e.target.result);
+    localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
+    load();
+    alert("Backup Importado!");
   };
   reader.readAsText(file);
 }
 
-function deleteSelected() {
-  const checks = document.querySelectorAll(".row-select:checked");
-  if (!checks.length || !confirm("Excluir selecionados?")) return;
-  const idxs = Array.from(checks).map(c => parseInt(c.getAttribute('data-index'))).sort((a,b)=>b-a);
-  idxs.forEach(i => inventoryData.splice(i, 1));
-  saveData();
-  load();
+function limparTudoLocal() {
+  if(confirm("Isso apagará os dados APENAS deste celular. Continuar?")) {
+    inventoryData = [];
+    localStorage.removeItem("oficina_inventory");
+    load();
+  }
 }
 
 function toggleAll(source) {
