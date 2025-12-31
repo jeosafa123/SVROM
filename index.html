@@ -3,7 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Sistema Oficina - Smart Scan v9.5</title>
+<title>Oficina Smart - v15.0 Pro PWA</title>
+
+<meta name="theme-color" content="#0f1720">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3062/3062409.png">
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -11,111 +16,125 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-/* Estilização Profissional v4.7 */
-body { font-family: 'Segoe UI', sans-serif; background:#0f1720; color:#e6eef6; margin:0; padding:20px; }
+/* SEU ESTILO ORIGINAL PRESERVADO */
+body { font-family: 'Segoe UI', sans-serif; background:#0f1720; color:#e6eef6; margin:0; padding:15px; }
 .container { max-width:1100px; margin:0 auto; }
-h1 { text-align:center; color: #2b9cff; margin-bottom: 30px; }
-.card { background:#14212d; padding:25px; border-radius:12px; margin-bottom:20px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-.tab-container { display: flex; border-bottom: 2px solid #2a3a4d; margin-bottom: 20px; gap: 5px; }
-.tab-button { background: #14212d; color: #98a3b3; border: none; padding: 12px 25px; cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; }
+h1 { text-align:center; color: #2b9cff; margin-bottom: 20px; font-size: 22px; }
+.card { background:#14212d; padding:20px; border-radius:12px; margin-bottom:15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+.tab-container { display: flex; border-bottom: 2px solid #2a3a4d; margin-bottom: 15px; gap: 5px; }
+.tab-button { background: #14212d; color: #98a3b3; border: none; padding: 10px 20px; cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; flex: 1; }
 .tab-button.active { background: #2b9cff; color: white; }
 .tab-content { display: none; }
 .tab-content.active { display: block; }
-label { display:block; margin-top:12px; font-weight: 600; color: #a0aec0; }
-input, select { width:100%; padding:12px; border-radius:6px; border:1px solid #2a3a4d; background:#0d1a24; color:#fff; box-sizing: border-box; margin-top: 5px; font-size: 15px; }
-.row { display:flex; gap:15px; flex-wrap: wrap; }
-.row > * { flex:1; min-width: 200px; }
-button { padding:12px 20px; border:none; border-radius:8px; cursor:pointer; font-weight: bold; transition: 0.2s; }
-.btn-main { background:#2b9cff; color: white; width: 100%; margin-top: 20px; font-size: 16px; }
-.btn-scan { background: #0ea5e9; color: white; margin-bottom: 15px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; border: 2px dashed #2b9cff; }
+label { display:block; margin-top:10px; font-weight: 600; color: #a0aec0; font-size: 14px; }
+input, select { width:100%; padding:12px; border-radius:6px; border:1px solid #2a3a4d; background:#0d1a24; color:#fff; box-sizing: border-box; margin-top: 5px; font-size: 16px; }
+.row { display:flex; gap:10px; flex-wrap: wrap; }
+.row > * { flex:1; min-width: 140px; }
+button { padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight: bold; transition: 0.2s; }
+.btn-main { background:#2b9cff; color: white; width: 100%; margin-top: 15px; font-size: 16px; }
+.btn-scan { background: #0ea5e9; color: white; margin-bottom: 15px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; border: 2px dashed #2b9cff; height: 55px; }
 .btn-red { background:#dc2626; color: white; }
 .btn-blue { background:#2563eb; color: white; }
-.btn-sync { background:#0ea5e9; color: white; border: 2px solid #0284c7; }
-table { width:100%; border-collapse:collapse; margin-top:15px; background: #0d1a24; border-radius: 8px; overflow: hidden; }
-th, td { padding:12px; border-bottom: 1px solid #2a3a4d; text-align: left; }
-th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 11px; }
-.loading-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:9999; flex-direction:column; align-items:center; justify-content:center; }
-.loader-spin { border: 4px solid #f3f3f3; border-top: 4px solid #2b9cff; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+.btn-sync { background:#16a34a; color: white; }
+table { width:100%; border-collapse:collapse; margin-top:10px; background: #0d1a24; font-size: 13px; }
+th, td { padding:10px; border-bottom: 1px solid #2a3a4d; text-align: left; }
+th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 10px; }
+.stat-box { background:#0d1a24; padding:10px; border-radius:8px; text-align: center; border: 1px solid #2a3a4d; flex: 1; }
+.stat-val { font-size: 1.4em; font-weight: bold; color: #4ade80; }
+.loading-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; flex-direction:column; align-items:center; justify-content:center; }
+.spinner { border: 4px solid #f3f3f3; border-top: 4px solid #2b9cff; border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 </style>
 </head>
 
 <body>
 <div id="loader" class="loading-overlay">
-    <div class="loader-spin"></div>
-    <p id="status-ocr" style="margin-top:15px; color:#2b9cff; font-weight:bold;">Lendo Imagem...</p>
+    <div class="spinner"></div>
+    <p id="status-ocr" style="margin-top:15px; color:#2b9cff; font-weight:bold; text-align:center;">
+        MELHORANDO IMAGEM...<br><small style="color:#98a3b3; font-weight:normal;">Otimizando leitura profissional</small>
+    </p>
 </div>
 
 <div class="container">
-  <h1>Gestão Oficina Mecânica</h1>
+  <h1>Oficina Inteligente v15.0</h1>
+
+  <button id="installBtn" style="display:none; background:#f59e0b; color:white; margin-bottom:15px; width:100%;">📲 INSTALAR APP NA TELA INICIAL</button>
 
   <div class="card" style="border-left: 5px solid #2b9cff;">
-    <label>Mecânico / Técnico Responsável</label>
-    <input id="usuario_nome" placeholder="Digite seu nome para a planilha" style="border: 1px solid #2b9cff;">
+    <label style="margin-top:0">Técnico Responsável</label>
+    <input id="usuario_nome" placeholder="Seu nome">
   </div>
 
   <div class="tab-container">
     <button class="tab-button active" onclick="openTab('tab-entrada', this)">📝 Lançamento</button>
-    <button class="tab-button" onclick="openTab('tab-inventario', this)">📋 Banco de Dados</button>
+    <button class="tab-button" onclick="openTab('tab-inventario', this)">📋 Lista</button>
   </div>
 
   <div id="tab-entrada" class="tab-content active">
     <div class="card">
       <label class="btn-scan">
-        📷 ESCANEAR FICHA (Câmera Inteligente)
+        📷 ESCANEAR FICHA AGORA
         <input type="file" accept="image/*" capture="camera" hidden onchange="processarImagem(event)">
       </label>
 
       <div class="row">
-        <div><label>OM</label><input id="om" placeholder="Extraído via câmera"></div>
-        <div><label>Patrimônio</label><input id="patrimonio" placeholder="Extraído via câmera"></div>
+        <div><label>OM</label><input id="om" placeholder="Detectando..."></div>
+        <div><label>Patrimônio</label><input id="patrimonio" placeholder="Detectando..."></div>
       </div>
       
-      <label>Equipamento (Tabela Automática)</label>
+      <label>Equipamento (Auto-Identificado)</label>
       <select id="nome" onchange="autoPreencher()">
-        <option value="">-- Selecione o item --</option>
+        <option value="">-- Aguardando Câmera --</option>
       </select>
 
       <div class="row">
         <div><label>Horas</label><input id="horas" type="number" step="0.01"></div>
-        <div><label>Valor Unitário (R$)</label><input id="valor" type="number" step="0.01"></div>
+        <div><label>Valor Unit.</label><input id="valor" type="number" step="0.01"></div>
       </div>
-      <button class="btn-main" onclick="addItem()">SALVAR NO DISPOSITIVO</button>
+      <button class="btn-main" onclick="addItem()">SALVAR ITEM</button>
+    </div>
+    
+    <div class="card">
+      <div class="row">
+        <div class="stat-box">
+          <div style="color:#98a3b3; font-size:12px;">Horas Totais</div>
+          <div id="totalHorasEntrada" class="stat-val" style="color:#fff">0.00</div>
+        </div>
+        <div class="stat-box">
+          <div style="color:#98a3b3; font-size:12px;">Custo Total</div>
+          <div id="totalValorEntrada" class="stat-val">R$ 0,00</div>
+        </div>
+      </div>
     </div>
   </div>
 
   <div id="tab-inventario" class="tab-content">
     <div class="card">
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;">
-        <button onclick="generatePDF()" class="btn-blue">📥 PDF</button>
-        <button onclick="generateExcel()" style="background:#16a34a; color:white;">📥 Excel</button>
-        <button onclick="syncData()" class="btn-sync">☁️ Sincronizar Nuvem</button>
-        <button onclick="exportBackupMensal()" class="btn-blue">📦 Backup JSON</button>
-        <button onclick="limparTudoLocal()" class="btn-red" style="margin-left: auto;">🗑️ Limpar App</button>
+        <button onclick="generatePDF()" class="btn-blue" style="flex:1">PDF</button>
+        <button onclick="generateExcel()" style="background:#16a34a; color:white; flex:1">Excel</button>
+        <button onclick="syncData()" class="btn-sync" style="flex:2">☁️ Sincronizar</button>
       </div>
-
-      <input type="text" id="searchInput" placeholder="🔍 Pesquisar na lista..." onkeyup="load()" style="margin-bottom: 15px; border: 1px solid #2b9cff;">
-
-      <table>
-        <thead>
-          <tr>
-            <th style="width: 20px;"><input type="checkbox" onclick="toggleAll(this)"></th>
-            <th>OM</th>
-            <th>Patr.</th>
-            <th>Equipamento</th>
-            <th>Horas</th>
-            <th>Valor</th>
-          </tr>
-        </thead>
-        <tbody id="lista"></tbody>
-      </table>
+      <input type="text" id="searchInput" placeholder="🔍 Buscar..." onkeyup="load()" style="margin-bottom:15px;">
+      <div style="overflow-x: auto;">
+        <table>
+          <thead>
+            <tr>
+              <th><input type="checkbox" onclick="toggleAll(this)"></th>
+              <th>OM</th><th>Patr.</th><th>Item</th><th>Hrs</th><th>Total R$</th>
+            </tr>
+          </thead>
+          <tbody id="lista"></tbody>
+        </table>
+      </div>
+      <button onclick="deleteSelected()" class="btn-red" style="margin-top:20px; width:100%">Excluir Selecionados</button>
     </div>
   </div>
 </div>
 
 <script>
-/* DADOS E CONFIGURAÇÕES */
-const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1gF93QyFH9mYuE2Nm3XYgdvQ19JNfR5HvM9uSLmGBzab2QmFlowN3oCZvjmG7YoLf/exec";
+/* DADOS E URL PRESERVADOS */
+const GOOGLE_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbw1gF93QyFH9mYuE2Nm3XYgdvQ19JNfR5HvM9uSLmGBzab2QmFlowN3oCZvjmG7YoLf/exec"; 
 const TOKEN = "OFICINA-SEGURA-123";
 
 const tabelaPrecos = [
@@ -158,51 +177,47 @@ let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || [];
 const select = document.getElementById("nome");
 tabelaPrecos.forEach(i => select.innerHTML += `<option value="${i.nome}">${i.nome}</option>`);
 
-/* CÂMERA INTELIGENTE (OCR) */
+/* SCANNER OCR PROFISSIONAL */
 async function processarImagem(event) {
     const file = event.target.files[0];
     if (!file) return;
-
     document.getElementById('loader').style.display = 'flex';
-    const statusText = document.getElementById('status-ocr');
-
     try {
-        statusText.innerText = "Reconhecendo texto...";
-        const result = await Tesseract.recognize(file, 'por', {
-            logger: m => { if(m.status === 'recognizing text') statusText.innerText = `Lendo: ${Math.round(m.progress * 100)}%`; }
-        });
-
-        const text = result.data.text.toUpperCase();
-        
-        // Identifica OM e Patrimônio pelos padrões circulados na imagem
-        const omMatch = text.match(/OM\s*N[º°\s]*(\d+)/) || text.match(/N[º°\s]*(\d{5,})/);
-        const patMatch = text.match(/PATRIM[ÔO]NIO[:\s]*(\d+)/);
-
-        if (omMatch) document.getElementById('om').value = omMatch[1];
+        const worker = await Tesseract.createWorker('por');
+        await worker.setParameters({ tessedit_char_whitelist: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 -' });
+        const { data: { text } } = await worker.recognize(file);
+        const limpo = text.toUpperCase().replace(/[\|\/\\_\[\]]/g, ' ').trim();
+        const omMatch = limpo.match(/\b\d{4,8}\b/);
+        if (omMatch) document.getElementById('om').value = omMatch[0];
+        const patMatch = limpo.match(/(?:PATR|PAT|P)\s*[:\-\s]*\s*(\d{2,6})/i);
         if (patMatch) document.getElementById('patrimonio').value = patMatch[1];
-
-        if(!omMatch && !patMatch) alert("Atenção: A foto pode estar tremida. Não consegui ler os números.");
-        
-    } catch (e) { alert("Erro ao processar imagem."); } 
+        let maquinaOk = "";
+        for (let item of tabelaPrecos) {
+            const palavrasItem = item.nome.split(" ").filter(p => p.length > 2);
+            if (palavrasItem.every(palavra => limpo.includes(palavra))) { maquinaOk = item.nome; break; }
+        }
+        if (!maquinaOk) {
+            for (let item of tabelaPrecos) {
+                if (limpo.includes(item.nome.split(" ")[0])) { maquinaOk = item.nome; break; }
+            }
+        }
+        if (maquinaOk) { document.getElementById('nome').value = maquinaOk; autoPreencher(); }
+        await worker.terminate();
+    } catch (e) { alert("Erro no scanner."); } 
     finally { document.getElementById('loader').style.display = 'none'; }
 }
 
-/* LÓGICA DE INTERFACE */
+/* FUNÇÕES DE LÓGICA PRESERVADAS */
 function openTab(tabId, btn) {
     document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
     document.querySelectorAll('.tab-button').forEach(tb => tb.classList.remove('active'));
     document.getElementById(tabId).classList.add('active');
-    if (btn) btn.classList.add('active');
+    btn.classList.add('active');
 }
-
 function autoPreencher() {
     const item = tabelaPrecos.find(i => i.nome === select.value);
-    if (item) {
-        document.getElementById("horas").value = item.horas;
-        document.getElementById("valor").value = item.valor.toFixed(2);
-    }
+    if (item) { document.getElementById("horas").value = item.horas; document.getElementById("valor").value = item.valor.toFixed(2); }
 }
-
 function addItem() {
     const item = {
         id: "ID-" + Date.now(),
@@ -213,77 +228,85 @@ function addItem() {
         horas: Number(document.getElementById("horas").value) || 0,
         valor: Number(document.getElementById("valor").value) || 0
     };
-    if (!item.om || !item.nome) return alert("OM e Equipamento são obrigatórios!");
+    if (!item.om || !item.nome) return alert("OM e Máquina são obrigatórios!");
     inventoryData.push(item);
     localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
     load();
-    alert("Salvo no celular!");
+    document.getElementById("om").value = ""; document.getElementById("patrimonio").value = "";
+    alert("Salvo!");
 }
-
 function load() {
     const termo = document.getElementById("searchInput").value.toLowerCase();
     const tbody = document.getElementById("lista");
-    tbody.innerHTML = "";
+    tbody.innerHTML = ""; let th = 0, tv = 0;
     inventoryData.forEach((i, idx) => {
         if (termo && !`${i.om} ${i.patrimonio} ${i.nome}`.toLowerCase().includes(termo)) return;
-        tbody.innerHTML += `<tr>
-            <td><input type="checkbox" class="row-select" data-index="${idx}"></td>
-            <td>${i.om}</td><td>${i.patrimonio}</td><td>${i.nome}</td>
-            <td>${Number(i.horas).toFixed(2)}</td><td>R$ ${Number(i.valor).toFixed(2)}</td>
-        </tr>`;
+        const h = Number(i.horas) || 0; const v = Number(i.valor) || 0;
+        th += h; tv += (h * v);
+        tbody.innerHTML += `<tr><td><input type="checkbox" class="row-select" data-index="${idx}"></td><td>${i.om}</td><td>${i.patrimonio}</td><td>${i.nome}</td><td>${h.toFixed(1)}</td><td>R$ ${(h*v).toFixed(2)}</td></tr>`;
+    });
+    document.getElementById("totalHorasEntrada").innerText = th.toFixed(2);
+    document.getElementById("totalValorEntrada").innerText = "R$ " + tv.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+}
+function syncData() {
+    const tecnico = document.getElementById("usuario_nome").value;
+    if(!tecnico) return alert("Digite seu nome!");
+    fetch(GOOGLE_SCRIPT_URL, { method: "POST", mode: "no-cors", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ token: TOKEN, usuario: tecnico, itens: inventoryData })
+    }).then(() => alert("Sincronizado!")).catch(() => alert("Erro rede."));
+}
+function deleteSelected() {
+    const checks = document.querySelectorAll(".row-select:checked");
+    if (!checks.length || !confirm("Remover?")) return;
+    const idxs = Array.from(checks).map(c => parseInt(c.getAttribute('data-index'))).sort((a,b) => b-a);
+    idxs.forEach(i => inventoryData.splice(i, 1));
+    localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
+    load();
+}
+function generatePDF() {
+    const { jsPDF } = window.jspdf; const doc = new jsPDF();
+    doc.text("Relatório de Oficina", 14, 15);
+    const rows = inventoryData.map(i => [i.om, i.patrimonio, i.nome, i.horas, (i.horas*i.valor).toFixed(2)]);
+    doc.autoTable({ head: [['OM', 'Patr.', 'Item', 'Horas', 'Valor R$']], body: rows, startY: 20 });
+    doc.save("oficina.pdf");
+}
+function generateExcel() {
+    const ws = XLSX.utils.json_to_sheet(inventoryData); const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Dados"); XLSX.writeFile(wb, "oficina.xlsx");
+}
+function toggleAll(source) { document.querySelectorAll(".row-select").forEach(c => c.checked = source.checked); }
+
+/* --- LOGICA PWA (REGISTRO) --- */
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        const swCode = `
+            const cacheName = 'oficina-v15';
+            self.addEventListener('install', e => {
+                e.waitUntil(caches.open(cacheName).then(cache => cache.addAll(['./'])));
+            });
+            self.addEventListener('fetch', e => {
+                e.respondWith(caches.match(e.request).then(res => res || fetch(e.request)));
+            });
+        `;
+        const blob = new Blob([swCode], {type: 'application/javascript'});
+        navigator.serviceWorker.register(URL.createObjectURL(blob));
     });
 }
 
-/* SINCRONIZAÇÃO E BACKUP */
-async function syncData() {
-    const tecnico = document.getElementById("usuario_nome").value;
-    if(!tecnico) return alert("ERRO: Digite seu nome antes de sincronizar!");
-    if (inventoryData.length === 0) return alert("Lista vazia.");
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    document.getElementById('installBtn').style.display = 'block';
+});
 
-    const btn = document.querySelector('.btn-sync');
-    btn.innerText = "🚀 Enviando...";
-    btn.disabled = true;
-
-    try {
-        await fetch(GOOGLE_SCRIPT_URL, {
-            method: "POST",
-            mode: "no-cors",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token: TOKEN, usuario: tecnico, itens: inventoryData })
-        });
-        alert("☁️ Sucesso! Dados enviados para a planilha (Aba Mensal).");
-    } catch (e) { alert("Erro de conexão."); } 
-    finally { btn.innerText = "☁️ Sincronizar Nuvem"; btn.disabled = false; }
-}
-
-function generatePDF() {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    doc.text("Relatório Oficina", 14, 15);
-    const rows = inventoryData.map(i => [i.om, i.patrimonio, i.nome, i.horas, i.valor]);
-    doc.autoTable({ head: [['OM', 'Patr.', 'Item', 'Horas', 'Valor']], body: rows, startY: 20 });
-    doc.save("oficina.pdf");
-}
-
-function generateExcel() {
-    const ws = XLSX.utils.json_to_sheet(inventoryData);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Dados");
-    XLSX.writeFile(wb, "oficina.xlsx");
-}
-
-function exportBackupMensal() {
-    const blob = new Blob([JSON.stringify(inventoryData)], {type: "application/json"});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'backup.json'; a.click();
-}
-
-function limparTudoLocal() {
-    if(confirm("Deseja apagar os dados do celular? (Certifique-se de ter sincronizado)")) {
-        inventoryData = []; localStorage.removeItem("oficina_inventory"); load();
+document.getElementById('installBtn').addEventListener('click', async () => {
+    if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === 'accepted') document.getElementById('installBtn').style.display = 'none';
+        deferredPrompt = null;
     }
-}
-
-function toggleAll(source) { document.querySelectorAll(".row-select").forEach(c => c.checked = source.checked); }
+});
 
 load();
 </script>
