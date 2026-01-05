@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Oficina Smart v19.1</title>
+<title>Oficina Smart v19.2</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -53,17 +53,11 @@ input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
 </div>
 
 <div class="container">
-  <h1>Oficina Smart v19.1</h1>
+  <h1>Oficina Smart v19.2</h1>
 
   <div class="card">
-    <label>Técnico Responsável</label>
-    <select id="usuario_nome">
-        <option value="">Selecione o Técnico...</option>
-        <option value="Jeosafa do nascimento da silva">Jeosafa do nascimento da silva</option>
-        <option value="Técnico 02">Técnico 02</option>
-        <option value="Técnico 03">Técnico 03</option>
-        <option value="Visitante">Visitante</option>
-    </select>
+    <label>Técnico Responsável (Digite seu nome)</label>
+    <input id="usuario_nome" type="text" placeholder="Seu nome completo" oninput="salvarNomeTecnico()">
   </div>
 
   <div class="tab-container">
@@ -180,28 +174,29 @@ const tabelaPrecos = [
 
 let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || [];
 
+// FUNÇÃO PARA SALVAR O NOME DO TÉCNICO NO CELULAR
+function salvarNomeTecnico() {
+    localStorage.setItem("tecnico_atual", document.getElementById("usuario_nome").value);
+}
+
+// CARREGAR O ÚLTIMO NOME SALVO AO ABRIR O APP
+window.onload = function() {
+    const salvo = localStorage.getItem("tecnico_atual");
+    if(salvo) document.getElementById("usuario_nome").value = salvo;
+};
+
 async function processarComOCR(event) {
     const file = event.target.files[0];
     if (!file) return;
     const loader = document.getElementById('loader');
-    const statusText = document.getElementById('status-text');
-    const fill = document.getElementById('progress-fill');
     loader.style.display = 'flex';
     try {
-        const result = await Tesseract.recognize(file, 'por', {
-            logger: m => {
-                if(m.status === 'recognizing text') {
-                    statusText.innerText = `LENDO FICHA: ${Math.round(m.progress * 100)}%`;
-                    fill.style.width = `${m.progress * 100}%`;
-                }
-            }
-        });
+        const result = await Tesseract.recognize(file, 'por');
         const raw = result.data.text;
         const omMatch = raw.match(/OM\s*N[º°\s]*[:\s]*(\d+)/i);
         const patMatch = raw.match(/Patrimônio\s*[:\s]*(\d+)/i);
         if (omMatch) document.getElementById('om').value = omMatch[1];
         if (patMatch) document.getElementById('patrimonio').value = patMatch[1];
-
         const select = document.getElementById('nome');
         tabelaPrecos.forEach(item => {
             if(raw.toUpperCase().includes(item.nome.split(' ')[0])) {
@@ -209,8 +204,8 @@ async function processarComOCR(event) {
                 autoPreencher();
             }
         });
-    } catch (e) { alert("Erro ao ler imagem."); }
-    finally { loader.style.display = 'none'; fill.style.width = '0%'; }
+    } catch (e) { alert("Erro OCR."); }
+    finally { loader.style.display = 'none'; }
 }
 
 function autoPreencher() {
@@ -223,7 +218,7 @@ function autoPreencher() {
 
 function addItem() {
     const tecnico = document.getElementById("usuario_nome").value;
-    if(!tecnico) return alert("Por favor, selecione o Técnico Responsável!");
+    if(!tecnico) return alert("Digite o nome do Técnico!");
 
     const it = {
         id: Date.now(), data: new Date().toLocaleDateString('pt-BR'),
@@ -239,8 +234,8 @@ function addItem() {
     inventoryData.unshift(it);
     localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
     load();
-    limparFormulario();
-    alert("Salvo com sucesso!");
+    limparFormulario(); // Limpa dados da máquina, mas MANTÉM o nome do técnico
+    alert("Salvo!");
 }
 
 function limparFormulario() {
@@ -256,8 +251,7 @@ function load() {
     b.innerHTML = "";
     let tv = 0, th = 0;
     inventoryData.forEach(i => {
-        tv += i.valor; 
-        th += i.horas;
+        tv += i.valor; th += i.horas;
         const statusColor = i.sincronizado ? '#4ade80' : '#dc2626';
         b.innerHTML += `<tr>
             <td><input type="checkbox" class="sync-check" data-id="${i.id}" ${i.sincronizado ? 'disabled' : ''}></td>
@@ -274,14 +268,8 @@ async function syncSelected() {
     if(!navigator.onLine) return alert("Sem internet!");
     const selectedIds = Array.from(document.querySelectorAll('.sync-check:checked')).map(cb => Number(cb.dataset.id));
     if(selectedIds.length === 0) return alert("Selecione os itens.");
-    
-    const itensParaEnviar = inventoryData.filter(i => selectedIds.includes(i.id)).map(i => ({
-        ...i,
-        valorTotalItem: i.valor 
-    }));
-
+    const itensParaEnviar = inventoryData.filter(i => selectedIds.includes(i.id)).map(i => ({...i, valorTotalItem: i.valor }));
     document.getElementById('loader').style.display = 'flex';
-    document.getElementById('status-text').innerText = `SINCRONIZANDO...`;
     try {
         await fetch(GOOGLE_URL, {
             method: "POST", mode: "no-cors",
@@ -291,9 +279,8 @@ async function syncSelected() {
         inventoryData.forEach(i => { if(selectedIds.includes(i.id)) i.sincronizado = true; });
         localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
         load();
-        document.getElementById('selectAll').checked = false;
         alert("Sincronizado!");
-    } catch (e) { alert("Erro ao sincronizar."); }
+    } catch (e) { alert("Erro."); }
     finally { document.getElementById('loader').style.display = 'none'; }
 }
 
@@ -304,7 +291,7 @@ function toggleAll(source) {
 function generatePDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    doc.text("Relatório Oficina Smart v19.1", 14, 15);
+    doc.text("Relatório Oficina Smart v19.2", 14, 15);
     doc.autoTable({
         head: [['OM', 'Técnico', 'Item', 'Hrs', 'Valor Unit. R$']],
         body: inventoryData.map(i => [i.om, i.tecnico, i.nome, i.horas, i.valor.toFixed(2)]),
@@ -321,7 +308,7 @@ function generateExcel() {
 }
 
 function clearAll() {
-    if(confirm("Deseja realmente limpar a lista local?")) {
+    if(confirm("Limpar tudo?")) {
         inventoryData = [];
         localStorage.removeItem("oficina_inventory");
         load();
@@ -340,4 +327,4 @@ tabelaPrecos.forEach(i => sel.innerHTML += `<option value="${i.nome}">${i.nome}<
 load();
 </script>
 </body>
-</html>
+                </html>
