@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Oficina Smart v18.4 - OCR Local</title>
+<title>Oficina Smart v18.6 - Seleção de Sincronia</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -27,38 +27,37 @@ input, select { width:100%; padding:12px; border-radius:6px; border:1px solid #2
 .row > * { flex:1; min-width: 140px; }
 button { padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight: bold; transition: 0.2s; }
 .btn-main { background:#2b9cff; color: white; width: 100%; margin-top: 15px; font-size: 16px; }
-.btn-scan { background: #8b5cf6; color: white; margin-bottom: 15px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; border: 2px solid #a78bfa; height: 55px; cursor: pointer; font-size: 16px; }
+.btn-scan { background: #8b5cf6; color: white; margin-bottom: 15px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; border: 2px solid #a78bfa; height: 55px; cursor: pointer; }
 .btn-blue { background:#2563eb; color: white; }
-.btn-sync { background:#16a34a; color: white; }
-.btn-yellow { background: #eab308; color: #000; }
+.btn-sync { background:#16a34a; color: white; border: 2px solid #4ade80; }
 .btn-red { background: #dc2626; color: white; }
 table { width:100%; border-collapse:collapse; margin-top:10px; background: #0d1a24; font-size: 13px; }
 th, td { padding:10px; border-bottom: 1px solid #2a3a4d; text-align: left; }
-th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 10px; }
 .stat-box { background:#0d1a24; padding:10px; border-radius:8px; text-align: center; border: 1px solid #2a3a4d; flex: 1; }
 .stat-val { font-size: 1.4em; font-weight: bold; color: #4ade80; }
-.status-pill { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
 .loading-overlay { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.95); z-index:9999; flex-direction:column; align-items:center; justify-content:center; }
 .spinner { border: 4px solid #f3f3f3; border-top: 4px solid #8b5cf6; border-radius: 50%; width: 45px; height: 45px; animation: spin 1s linear infinite; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 #progress-bar { width: 80%; height: 8px; background: #2a3a4d; border-radius: 4px; margin-top: 15px; overflow: hidden; }
 #progress-fill { width: 0%; height: 100%; background: #8b5cf6; transition: 0.2s; }
+/* Estilo Checkbox */
+input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
 </style>
 </head>
 
 <body>
 <div id="loader" class="loading-overlay">
     <div class="spinner"></div>
-    <p id="status-text" style="margin-top:15px; color:#a78bfa; font-weight:bold; text-align:center;">INICIALIZANDO OCR...</p>
+    <p id="status-text" style="margin-top:15px; color:#a78bfa; font-weight:bold; text-align:center;">PROCESSANDO...</p>
     <div id="progress-bar"><div id="progress-fill"></div></div>
 </div>
 
 <div class="container">
-  <h1>Oficina Smart v18.4</h1>
+  <h1>Oficina Smart v18.6</h1>
 
   <div class="card">
     <label>Técnico Responsável</label>
-    <input id="usuario_nome" placeholder="Seu nome completo" value="Jeosafa do nascimento da silva">
+    <input id="usuario_nome" value="Jeosafa do nascimento da silva">
   </div>
 
   <div class="tab-container">
@@ -69,7 +68,7 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
   <div id="tab-entrada" class="tab-content active">
     <div class="card">
       <label class="btn-scan">
-        📷 ESCANEAR FICHA POWER (OCR)
+        📷 ESCANEAR FICHA (OCR LOCAL)
         <input type="file" accept="image/*" capture="camera" hidden onchange="processarComOCR(event)">
       </label>
 
@@ -99,31 +98,32 @@ th { background:#1c2b38; color: #2b9cff; text-transform: uppercase; font-size: 1
       <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 20px;">
         <button onclick="generatePDF()" class="btn-blue" style="flex:1">PDF</button>
         <button onclick="generateExcel()" style="background:#16a34a; color:white; flex:1">Excel</button>
-        <label class="btn-yellow" style="flex:1; margin:0; display:flex; align-items:center; justify-content:center; cursor:pointer;">
-            Importar <input type="file" accept=".xlsx, .xls, .csv" hidden onchange="importExcel(event)">
-        </label>
-        <button onclick="syncData()" class="btn-sync" style="flex:2; background:#8b5cf6;">☁️ Sincronizar Nuvem</button>
+        <button onclick="syncSelected()" class="btn-sync" style="flex:2; background:#8b5cf6;">☁️ Sincronizar Selecionados</button>
       </div>
 
-      <button onclick="clearAll()" class="btn-red" style="width:100%; margin-bottom:15px; font-size:11px;">Limpar Dados do Celular</button>
-      
       <div style="overflow-x: auto;">
         <table>
-          <thead><tr><th>Status</th><th>OM</th><th>Item</th><th>Total R$</th></tr></thead>
+          <thead>
+            <tr>
+              <th><input type="checkbox" id="selectAll" onclick="toggleAll(this)"></th>
+              <th>Status</th>
+              <th>OM</th>
+              <th>Item</th>
+              <th>Total R$</th>
+            </tr>
+          </thead>
           <tbody id="lista"></tbody>
         </table>
       </div>
+      <button onclick="clearAll()" class="btn-red" style="width:100%; margin-top:20px; font-size:11px;">Limpar Tudo do Celular</button>
     </div>
   </div>
 </div>
 
 <script>
-/* SEGURANÇA MASCARADA */
-const _d = ["aHR0cHM6Ly9zY3JpcHQuZ29vZ2xlLmNvbS9tYWNyb3Mvcy9BS2Z5Y2J3MWdGOTNReUZIZ005dU11RTJObVhZZ3ZRMTkzTmY0SHZNMXVTTEdNQm96YWIyUW1GbG93TjNvQ1p2am1HN1lvTGYvZXhlYw==", "T0ZJQ0lOQS1TRUdVUkEtMTIz"];
-const GOOGLE_URL = atob(_d[0]);
-const TOKEN = atob(_d[1]);
+const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw1gF93QyFH9mYuE2Nm3XYgdvQ19JNfR5HvM9uSLmGBzab2QmFlowN3oCZvjmG7YoLf/exec";
+const TOKEN = "OFICINA-SEGURA-123";
 
-/* TABELA DE PREÇOS COMPLETA PRESERVADA */
 const tabelaPrecos = [
   { nome: "ACABADORA DE SUPERFICIE", valor: 2.00, horas: 5.0 },
   { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
@@ -162,17 +162,14 @@ const tabelaPrecos = [
 
 let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || [];
 
-/* NOVO OCR LOCAL COM TESSERACT */
+// OCR Tesseract Local
 async function processarComOCR(event) {
     const file = event.target.files[0];
     if (!file) return;
-
     const loader = document.getElementById('loader');
     const statusText = document.getElementById('status-text');
     const fill = document.getElementById('progress-fill');
-    
     loader.style.display = 'flex';
-
     try {
         const result = await Tesseract.recognize(file, 'por', {
             logger: m => {
@@ -182,31 +179,23 @@ async function processarComOCR(event) {
                 }
             }
         });
-
         const raw = result.data.text;
-        
-        // Regex para capturar números após palavras-chave
         const omMatch = raw.match(/OM\s*N[º°\s]*[:\s]*(\d+)/i);
         const patMatch = raw.match(/Patrimônio\s*[:\s]*(\d+)/i);
-        
         if (omMatch) document.getElementById('om').value = omMatch[1];
         if (patMatch) document.getElementById('patrimonio').value = patMatch[1];
-
-        // Tenta identificar o equipamento pela lista
         const select = document.getElementById('nome');
         tabelaPrecos.forEach(item => {
-            const termoReduzido = item.nome.split('|')[0].trim().toUpperCase();
-            if(raw.toUpperCase().includes(termoReduzido)) {
+            const termo = item.nome.split('|')[0].trim().toUpperCase();
+            if(raw.toUpperCase().includes(termo)) {
                 select.value = item.nome;
                 autoPreencher();
             }
         });
-
-    } catch (e) { alert("Erro no processamento local da imagem."); }
+    } catch (e) { alert("Erro ao ler imagem."); }
     finally { loader.style.display = 'none'; fill.style.width = '0%'; }
 }
 
-/* CARACTERÍSTICAS DE LANÇAMENTO */
 function autoPreencher() {
     const i = tabelaPrecos.find(x => x.nome === document.getElementById("nome").value);
     if (i) { document.getElementById("horas").value = i.horas; document.getElementById("valor").value = i.valor.toFixed(2); }
@@ -224,17 +213,19 @@ function addItem() {
     inventoryData.unshift(it);
     localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
     load();
+    alert("Salvo na lista local!");
 }
 
-/* CARACTERÍSTICAS DE EXPORTAÇÃO E CARGA */
 function load() {
     const b = document.getElementById("lista");
     b.innerHTML = "";
     let th = 0, tv = 0;
     inventoryData.forEach(i => {
         th += i.horas; tv += (i.horas * i.valor);
+        const statusColor = i.sincronizado ? '#4ade80' : '#dc2626';
         b.innerHTML += `<tr>
-            <td><span class="status-pill" style="background:${i.sincronizado ? '#4ade80' : '#dc2626'}"></span></td>
+            <td><input type="checkbox" class="sync-check" data-id="${i.id}" ${i.sincronizado ? 'disabled' : ''}></td>
+            <td><span style="width:10px; height:10px; border-radius:50%; display:inline-block; background:${statusColor}"></span></td>
             <td>${i.om}</td><td>${i.nome}</td><td>R$ ${(i.horas*i.valor).toFixed(2)}</td>
         </tr>`;
     });
@@ -242,32 +233,46 @@ function load() {
     document.getElementById("totalValor").innerText = "R$ " + tv.toLocaleString('pt-BR', {minimumFractionDigits: 2});
 }
 
-async function syncData() {
+// SINCRONIZAÇÃO APENAS DOS SELECIONADOS
+async function syncSelected() {
     if(!navigator.onLine) return alert("Sem internet!");
-    const pendentes = inventoryData.filter(i => !i.sincronizado);
-    if(pendentes.length === 0) return alert("Nada novo para sincronizar.");
+    
+    const selectedIds = Array.from(document.querySelectorAll('.sync-check:checked')).map(cb => Number(cb.dataset.id));
+    if(selectedIds.length === 0) return alert("Selecione os itens que deseja enviar.");
+
+    const itensParaEnviar = inventoryData.filter(i => selectedIds.includes(i.id));
 
     document.getElementById('loader').style.display = 'flex';
-    document.getElementById('status-text').innerText = "SINCRONIZANDO NUVEM...";
+    document.getElementById('status-text').innerText = `ENVIANDO ${itensParaEnviar.length} ITENS...`;
 
     try {
         await fetch(GOOGLE_URL, {
             method: "POST", mode: "no-cors",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ token: TOKEN, usuario: document.getElementById("usuario_nome").value, itens: pendentes })
+            body: JSON.stringify({ token: TOKEN, usuario: document.getElementById("usuario_nome").value, itens: itensParaEnviar })
         });
-        inventoryData.forEach(i => i.sincronizado = true);
+        
+        // Marcar apenas os que foram enviados como sincronizados
+        inventoryData.forEach(i => {
+            if(selectedIds.includes(i.id)) i.sincronizado = true;
+        });
+        
         localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
         load();
-        alert("Sincronizado!");
-    } catch (e) { alert("Erro de conexão."); }
+        document.getElementById('selectAll').checked = false;
+        alert("Sincronização concluída!");
+    } catch (e) { alert("Erro na sincronização."); }
     finally { document.getElementById('loader').style.display = 'none'; }
+}
+
+function toggleAll(source) {
+    document.querySelectorAll('.sync-check:not([disabled])').forEach(cb => cb.checked = source.checked);
 }
 
 function generatePDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    doc.text("Oficina Smart - Relatório", 14, 15);
+    doc.text("Relatório Oficina Smart", 14, 15);
     doc.autoTable({
         head: [['OM', 'Item', 'Horas', 'R$ Total']],
         body: inventoryData.map(i => [i.om, i.nome, i.horas, (i.horas*i.valor).toFixed(2)]),
@@ -280,31 +285,11 @@ function generateExcel() {
     const ws = XLSX.utils.json_to_sheet(inventoryData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Dados");
-    XLSX.writeFile(wb, "Dados_Oficina.xlsx");
-}
-
-function importExcel(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const data = new Uint8Array(e.target.result);
-        const wb = XLSX.read(data, { type: 'array' });
-        const json = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-        const novos = json.map(r => ({
-            id: Date.now() + Math.random(), data: new Date().toLocaleDateString('pt-BR'),
-            tecnico: "Importado", om: r.OM || r.om, patrimonio: r.Patrimonio || r.patrimonio,
-            nome: r.Item || r.nome, horas: Number(r.Horas || 0), valor: Number(r.Valor || 0), sincronizado: false
-        })).filter(i => i.om);
-        inventoryData = [...novos, ...inventoryData];
-        localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-        load();
-    };
-    reader.readAsArrayBuffer(file);
+    XLSX.writeFile(wb, "Oficina_Dados.xlsx");
 }
 
 function clearAll() {
-    if(confirm("Deseja apagar a lista local?")) {
+    if(confirm("Deseja apagar toda a lista local?")) {
         inventoryData = [];
         localStorage.removeItem("oficina_inventory");
         load();
