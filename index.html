@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Oficina Smart v18.6 - Seleção de Sincronia</title>
+<title>Oficina Smart v18.7 - Estável</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -40,7 +40,6 @@ th, td { padding:10px; border-bottom: 1px solid #2a3a4d; text-align: left; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 #progress-bar { width: 80%; height: 8px; background: #2a3a4d; border-radius: 4px; margin-top: 15px; overflow: hidden; }
 #progress-fill { width: 0%; height: 100%; background: #8b5cf6; transition: 0.2s; }
-/* Estilo Checkbox */
 input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
 </style>
 </head>
@@ -53,7 +52,7 @@ input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
 </div>
 
 <div class="container">
-  <h1>Oficina Smart v18.6</h1>
+  <h1>Oficina Smart v18.7</h1>
 
   <div class="card">
     <label>Técnico Responsável</label>
@@ -73,16 +72,16 @@ input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
       </label>
 
       <div class="row">
-        <div><label>OM Nº</label><input id="om" type="text"></div>
+        <div><label>OM Nº</label><input id="om" type="text" placeholder="Ex: 035232"></div>
         <div><label>Patrimônio</label><input id="patrimonio" type="text"></div>
       </div>
       
       <label>Equipamento</label>
-      <select id="nome" onchange="autoPreencher()"><option value="">Aguardando scanner...</option></select>
+      <select id="nome" onchange="autoPreencher()"><option value="">Selecione...</option></select>
 
       <div class="row">
-        <div><label>Horas</label><input id="horas" type="number" step="0.01"></div>
-        <div><label>Valor Unit.</label><input id="valor" type="number" step="0.01"></div>
+        <div><label>Tempo Hrs / OM</label><input id="horas" type="number" step="0.01"></div>
+        <div><label>Valor Unit. (Normal)</label><input id="valor" type="number" step="0.01"></div>
       </div>
       <button class="btn-main" onclick="addItem()">SALVAR ITEM LOCAL</button>
     </div>
@@ -121,16 +120,18 @@ input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
 </div>
 
 <script>
+// URL e Token preservados conforme solicitado
 const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbw1gF93QyFH9mYuE2Nm3XYgdvQ19JNfR5HvM9uSLmGBzab2QmFlowN3oCZvjmG7YoLf/exec";
 const TOKEN = "OFICINA-SEGURA-123";
 
+// Tabela de Preços e Horas baseada na imagem do Excel
 const tabelaPrecos = [
-  { nome: "ACABADORA DE SUPERFICIE", valor: 2.00, horas: 5.0 },
+  { nome: "ACABADORA DE SUPERFÍCIE", valor: 2.00, horas: 5.0 },
   { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
   { nome: "BANCADA DE SERRA", valor: 8.00, horas: 4.5 },
   { nome: "BETONEIRA 150 LT", valor: 6.00, horas: 4.5 },
   { nome: "BETONEIRA 400 LT", valor: 6.00, horas: 4.5 },
-  { nome: "BETONEIRA 600 LT", valor: 16.90, horas: 16.0 },
+  { nome: "BETONEIRA 600LT", valor: 16.90, horas: 16.0 },
   { nome: "BOMBA MANGOTE", valor: 4.00, horas: 3.0 },
   { nome: "BOMBA SUBMERSA", valor: 4.00, horas: 4.0 },
   { nome: "COMPACTADOR", valor: 3.00, horas: 4.0 },
@@ -138,31 +139,31 @@ const tabelaPrecos = [
   { nome: "GERADOR", valor: 3.00, horas: 3.2 },
   { nome: "GUINCHO DE ELEVAÇÃO", valor: 10.00, horas: 6.0 },
   { nome: "MARTELO 2 KG - 220V", valor: 1.50, horas: 2.0 },
-  { nome: "MARTELO 5,7 KG - 220V", valor: 1.50, horas: 2.0 },
+  { nome: "MARTELO 5,7 KG-220V", valor: 1.50, horas: 2.0 },
   { nome: "MARTELO 6 KG - 220V", valor: 1.70, horas: 2.0 },
   { nome: "MARTELO 11 KG - ROT", valor: 2.00, horas: 2.2 },
   { nome: "MARTELO 11 KG - 220V", valor: 1.70, horas: 2.2 },
   { nome: "MARTELO 16/19 KG", valor: 2.00, horas: 2.3 },
   { nome: "MARTELO 19 KG - 220V", valor: 2.00, horas: 2.5 },
-  { nome: "MARTELO 30 KG - 220V", valor: 2.00, horas: 2.5 },
+  { nome: "MARTELO 30 KG-220V", valor: 2.00, horas: 2.5 },
   { nome: "MINI GRUA", valor: 10.00, horas: 6.0 },
   { nome: "MOTOR - ACIONADOR", valor: 3.00, horas: 3.0 },
-  { nome: "MOTOR - ELET TRIFA", valor: 3.00, horas: 3.0 },
+  { nome: "MOTOR - ELET_TRIFA", valor: 3.00, horas: 3.0 },
   { nome: "PLACA VIBRATORIA", valor: 3.50, horas: 4.5 },
-  { nome: "RÉGUA VIBRATÓRIA", valor: 5.00, horas: 4.5 },
-  { nome: "TORRE DE ILUMINAÇÃO", valor: 25.00, horas: 6.0 },
-  { nome: "UNIDADE HIDRÁULICA", valor: 8.00, horas: 16.0 },
-  { nome: "VIBRADOR DE IMERSÃO", valor: 2.80, horas: 4.0 },
-  { nome: "ROLO COMPACTADOR (Pesada)", valor: 20.00, horas: 24.0 },
-  { nome: "MINI CARREGADEIRA (Pesada)", valor: 34.00, horas: 16.0 },
-  { nome: "MINI ESCAVADEIRA (Pesada)", valor: 34.00, horas: 16.0 },
+  { nome: "REGUA VIBRATORIA", valor: 5.00, horas: 4.5 },
+  { nome: "TORRE DE ILUMINACAO", valor: 25.00, horas: 6.0 },
+  { nome: "UNIDADES HIDRAULICA", valor: 8.00, horas: 16.0 },
+  { nome: "VIBRADOR DE IMERSAO", valor: 2.80, horas: 4.0 },
+  { nome: "ROLO COMPACTADOR", valor: 20.00, horas: 24.0 },
+  { nome: "MINI CARREGADEIRA", valor: 34.00, horas: 16.0 },
+  { nome: "MINI ESCAVADEIRA", valor: 34.00, horas: 16.0 },
   { nome: "VELOX", valor: 8.00, horas: 6.0 },
-  { nome: "PERFURATRIZ", valor: 25.00, horas: 6.0 }
+  { nome: "PERFURATRIZ", valor: 25.00, horas: 6.0 },
+  { nome: "MAQUINA PESADA", valor: 34.00, horas: 16.0 }
 ];
 
 let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || [];
 
-// OCR Tesseract Local
 async function processarComOCR(event) {
     const file = event.target.files[0];
     if (!file) return;
@@ -180,14 +181,17 @@ async function processarComOCR(event) {
             }
         });
         const raw = result.data.text;
+        
+        // Captura o OM Nº da imagem (Padrão: OM Nº 035232)
         const omMatch = raw.match(/OM\s*N[º°\s]*[:\s]*(\d+)/i);
         const patMatch = raw.match(/Patrimônio\s*[:\s]*(\d+)/i);
+        
         if (omMatch) document.getElementById('om').value = omMatch[1];
         if (patMatch) document.getElementById('patrimonio').value = patMatch[1];
+
         const select = document.getElementById('nome');
         tabelaPrecos.forEach(item => {
-            const termo = item.nome.split('|')[0].trim().toUpperCase();
-            if(raw.toUpperCase().includes(termo)) {
+            if(raw.toUpperCase().includes(item.nome.split(' ')[0])) {
                 select.value = item.nome;
                 autoPreencher();
             }
@@ -198,7 +202,10 @@ async function processarComOCR(event) {
 
 function autoPreencher() {
     const i = tabelaPrecos.find(x => x.nome === document.getElementById("nome").value);
-    if (i) { document.getElementById("horas").value = i.horas; document.getElementById("valor").value = i.valor.toFixed(2); }
+    if (i) { 
+        document.getElementById("horas").value = i.horas; 
+        document.getElementById("valor").value = i.valor.toFixed(2); 
+    }
 }
 
 function addItem() {
@@ -213,7 +220,7 @@ function addItem() {
     inventoryData.unshift(it);
     localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
     load();
-    alert("Salvo na lista local!");
+    alert("Salvo localmente!");
 }
 
 function load() {
@@ -233,34 +240,24 @@ function load() {
     document.getElementById("totalValor").innerText = "R$ " + tv.toLocaleString('pt-BR', {minimumFractionDigits: 2});
 }
 
-// SINCRONIZAÇÃO APENAS DOS SELECIONADOS
 async function syncSelected() {
     if(!navigator.onLine) return alert("Sem internet!");
-    
     const selectedIds = Array.from(document.querySelectorAll('.sync-check:checked')).map(cb => Number(cb.dataset.id));
-    if(selectedIds.length === 0) return alert("Selecione os itens que deseja enviar.");
-
+    if(selectedIds.length === 0) return alert("Selecione os itens para sincronizar.");
     const itensParaEnviar = inventoryData.filter(i => selectedIds.includes(i.id));
-
     document.getElementById('loader').style.display = 'flex';
-    document.getElementById('status-text').innerText = `ENVIANDO ${itensParaEnviar.length} ITENS...`;
-
+    document.getElementById('status-text').innerText = `ENVIANDO...`;
     try {
         await fetch(GOOGLE_URL, {
             method: "POST", mode: "no-cors",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ token: TOKEN, usuario: document.getElementById("usuario_nome").value, itens: itensParaEnviar })
         });
-        
-        // Marcar apenas os que foram enviados como sincronizados
-        inventoryData.forEach(i => {
-            if(selectedIds.includes(i.id)) i.sincronizado = true;
-        });
-        
+        inventoryData.forEach(i => { if(selectedIds.includes(i.id)) i.sincronizado = true; });
         localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
         load();
         document.getElementById('selectAll').checked = false;
-        alert("Sincronização concluída!");
+        alert("Sincronizado!");
     } catch (e) { alert("Erro na sincronização."); }
     finally { document.getElementById('loader').style.display = 'none'; }
 }
@@ -278,18 +275,18 @@ function generatePDF() {
         body: inventoryData.map(i => [i.om, i.nome, i.horas, (i.horas*i.valor).toFixed(2)]),
         startY: 20
     });
-    doc.save("Relatorio_Oficina.pdf");
+    doc.save("Relatorio.pdf");
 }
 
 function generateExcel() {
     const ws = XLSX.utils.json_to_sheet(inventoryData);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Dados");
-    XLSX.writeFile(wb, "Oficina_Dados.xlsx");
+    XLSX.writeFile(wb, "Dados.xlsx");
 }
 
 function clearAll() {
-    if(confirm("Deseja apagar toda a lista local?")) {
+    if(confirm("Apagar tudo?")) {
         inventoryData = [];
         localStorage.removeItem("oficina_inventory");
         load();
@@ -303,7 +300,6 @@ function openTab(id, btn) {
     btn.classList.add('active');
 }
 
-// Setup inicial
 const sel = document.getElementById("nome");
 tabelaPrecos.forEach(i => sel.innerHTML += `<option value="${i.nome}">${i.nome}</option>`);
 load();
