@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-<title>Oficina Smart v19.0</title>
+<title>Oficina Smart v19.1</title>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -53,11 +53,17 @@ input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; }
 </div>
 
 <div class="container">
-  <h1>Oficina Smart v19.0</h1>
+  <h1>Oficina Smart v19.1</h1>
 
   <div class="card">
     <label>Técnico Responsável</label>
-    <input id="usuario_nome" value="">
+    <select id="usuario_nome">
+        <option value="">Selecione o Técnico...</option>
+        <option value="Jeosafa do nascimento da silva">Jeosafa do nascimento da silva</option>
+        <option value="Técnico 02">Técnico 02</option>
+        <option value="Técnico 03">Técnico 03</option>
+        <option value="Visitante">Visitante</option>
+    </select>
   </div>
 
   <div class="tab-container">
@@ -216,9 +222,12 @@ function autoPreencher() {
 }
 
 function addItem() {
+    const tecnico = document.getElementById("usuario_nome").value;
+    if(!tecnico) return alert("Por favor, selecione o Técnico Responsável!");
+
     const it = {
         id: Date.now(), data: new Date().toLocaleDateString('pt-BR'),
-        tecnico: document.getElementById("usuario_nome").value,
+        tecnico: tecnico,
         om: document.getElementById("om").value, patrimonio: document.getElementById("patrimonio").value,
         nome: document.getElementById("nome").value, 
         horas: Number(document.getElementById("horas").value),
@@ -230,10 +239,7 @@ function addItem() {
     inventoryData.unshift(it);
     localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
     load();
-    
-    // NOVIDADE: FUNÇÃO DE LIMPEZA AUTOMÁTICA
     limparFormulario();
-    
     alert("Salvo com sucesso!");
 }
 
@@ -248,8 +254,7 @@ function limparFormulario() {
 function load() {
     const b = document.getElementById("lista");
     b.innerHTML = "";
-    let tv = 0;
-    let th = 0;
+    let tv = 0, th = 0;
     inventoryData.forEach(i => {
         tv += i.valor; 
         th += i.horas;
@@ -299,10 +304,10 @@ function toggleAll(source) {
 function generatePDF() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF();
-    doc.text("Relatório Oficina Smart v19.0", 14, 15);
+    doc.text("Relatório Oficina Smart v19.1", 14, 15);
     doc.autoTable({
-        head: [['OM', 'Item', 'Hrs', 'Valor Unit. R$']],
-        body: inventoryData.map(i => [i.om, i.nome, i.horas, i.valor.toFixed(2)]),
+        head: [['OM', 'Técnico', 'Item', 'Hrs', 'Valor Unit. R$']],
+        body: inventoryData.map(i => [i.om, i.tecnico, i.nome, i.horas, i.valor.toFixed(2)]),
         startY: 20
     });
     doc.save("Relatorio.pdf");
