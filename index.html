@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>Vertical Locações - Oficina Smart v20.0</title>
+    <title>Vertical Locações - Oficina Smart v20.3</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -23,7 +23,7 @@
         .loading-bar-container { width: 300px; height: 4px; background: rgba(255, 255, 255, 0.1); border-radius: 2px; margin-top: 10px; overflow: hidden;}
         #progress-bar-fill { width: 0%; height: 100%; background: #ffcc00; box-shadow: 0 0 10px #ffcc00; transition: width 0.3s; }
 
-        /* --- INTERFACE DO APP --- */
+        /* --- INTERFACE --- */
         .app-content { padding: 15px; max-width: 1100px; margin: 0 auto; display: none; opacity: 0; transition: opacity 0.5s; }
         .card { background:#14212d; padding:15px; border-radius:12px; margin-bottom:15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
         .tab-container { display: flex; border-bottom: 2px solid #2a3a4d; margin-bottom: 15px; gap: 5px; }
@@ -67,11 +67,11 @@
 
     <div id="loader-global" class="loader-global">
         <div style="border: 4px solid #f3f3f3; border-top: 4px solid #ffcc00; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
-        <p id="loader-text" style="color:white; margin-top:15px; font-weight:bold;">SINCROINIZANDO...</p>
+        <p id="loader-text" style="color:white; margin-top:15px; font-weight:bold;">PROCESSANDO...</p>
     </div>
 
     <div class="app-content" id="main-app">
-        <h1 style="color:#ffcc00; border-bottom: 2px solid #ffcc00; padding-bottom: 10px; font-size: 20px;">OFICINA SMART v20.0</h1>
+        <h1 style="color:#ffcc00; border-bottom: 2px solid #ffcc00; padding-bottom: 10px; font-size: 20px;">OFICINA SMART v20.3</h1>
 
         <div class="card">
             <label>Técnico Responsável</label>
@@ -110,7 +110,7 @@
 
         <div id="tab-inventario" class="tab-content">
             <div class="card" style="border: 1px solid #8b5cf6; background: #1a162d;">
-                <label style="color:#a78bfa; margin-top:0;">🔄 RESTAURAR DA NUVEM</label>
+                <label style="color:#a78bfa; margin-top:0;">🔄 RESTAURAR DA NUVEM (BACKUP)</label>
                 <div class="row">
                     <input type="month" id="filtro_mes">
                     <button onclick="importFromCloud()" style="background:#8b5cf6; color:white;">BAIXAR</button>
@@ -120,7 +120,6 @@
             <div class="card">
                 <div class="row" style="margin-bottom:15px;">
                     <div class="stat-box"><div>ITENS</div><div id="totalItens" class="stat-val">0</div></div>
-                    <div class="stat-box"><div>HORAS</div><div id="totalHoras" class="stat-val">0</div></div>
                     <div class="stat-box"><div>TOTAL R$</div><div id="totalValor" class="stat-val">0,00</div></div>
                 </div>
                 
@@ -149,7 +148,7 @@
     </div>
 
     <script>
-        // --- CONFIGURAÇÕES DO USUÁRIO ---
+        // --- CONFIGURAÇÕES COM SUA URL NOVA ---
         const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbyiE0C-uEcW7-BIhwaXk-3gRUvP_wYMpHTaIF3cJm5LUoBgKFYhbPUqeEHt47OPP8Hp/exec"; 
         const TOKEN = "OFICINA-SEGURA-123";
 
@@ -182,7 +181,6 @@
 
         let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || [];
 
-        // --- LÓGICA DE INICIALIZAÇÃO ---
         window.onload = () => {
             const salvo = localStorage.getItem("tecnico_atual");
             if(salvo) document.getElementById("usuario_nome").value = salvo;
@@ -196,16 +194,15 @@
             let p = 0;
             const fill = document.getElementById('progress-bar-fill');
             const interval = setInterval(() => {
-                p += Math.floor(Math.random() * 20) + 5;
+                p += 10;
                 if(fill) fill.style.width = Math.min(p, 100) + "%";
                 if(p >= 100) { clearInterval(interval); finishLoading(); }
-            }, 150);
-            setTimeout(finishLoading, 4000); // Trava de segurança
+            }, 100);
         }
 
         function finishLoading() {
             const screen = document.getElementById('loading-screen');
-            if(screen.style.display !== 'none') {
+            if(screen) {
                 screen.style.opacity = '0';
                 setTimeout(() => {
                     screen.style.display = 'none';
@@ -215,13 +212,63 @@
             }
         }
 
-        // --- FUNÇÕES DE DADOS ---
+        // --- OCR OTIMIZADO ---
+        async function processarOCR(event) {
+            const arquivo = event.target.files[0];
+            if (!arquivo) return;
+            showLoader("CARREGANDO MOTOR...");
+            try {
+                const worker = await Tesseract.createWorker({
+                    logger: m => { if(m.status === 'recognizing text') showLoader(`LENDO: ${Math.floor(m.progress * 100)}%`); }
+                });
+                await worker.loadLanguage('por');
+                await worker.initialize('por');
+                const { data: { text } } = await worker.recognize(arquivo);
+                const textoLimpo = text.toUpperCase();
+                const matchOM = textoLimpo.match(/(?:OM|ORDEM)\s*[:\-\s]*(\d{3,})/i) || textoLimpo.match(/\d{5,}/);
+                if (matchOM) { 
+                    document.getElementById('om').value = Array.isArray(matchOM) ? (matchOM[1] || matchOM[0]) : matchOM;
+                    alert("OM Identificada!");
+                }
+                await worker.terminate();
+            } catch (e) { alert("Erro ao processar imagem."); }
+            hideLoader();
+        }
+
+        // --- BACKUP (IMPORTAR DA NUVEM) ---
+        async function importFromCloud() {
+            const tecnico = document.getElementById("usuario_nome").value;
+            const mesFiltro = document.getElementById("filtro_mes").value;
+            if (!tecnico || !mesFiltro) return alert("Identifique o Técnico e o Mês!");
+
+            showLoader("BUSCANDO NA NUVEM...");
+            try {
+                // Envia action=getBackup para o doGet do Apps Script
+                const urlBusca = `${GOOGLE_URL}?action=getBackup&usuario=${encodeURIComponent(tecnico)}&mes=${mesFiltro}`;
+                const response = await fetch(urlBusca);
+                const resultado = await response.json();
+
+                if (resultado.itens && resultado.itens.length > 0) {
+                    const novosItens = resultado.itens.filter(n => !inventoryData.some(l => l.id == n.id));
+                    if (novosItens.length === 0) { alert("Todos os dados já estão no celular."); }
+                    else {
+                        inventoryData = [...novosItens, ...inventoryData];
+                        localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
+                        load();
+                        alert(`${novosItens.length} itens recuperados!`);
+                    }
+                } else { alert("Nenhum dado encontrado para este técnico neste mês."); }
+            } catch (e) { alert("Erro ao conectar com o servidor da planilha."); }
+            hideLoader();
+        }
+
+        // --- FUNÇÕES DE LISTAGEM ---
         function load() {
             const lista = document.getElementById("lista");
             lista.innerHTML = "";
-            let v = 0, h = 0;
+            let v = 0;
             inventoryData.forEach(i => {
-                v += i.valor; h += i.horas;
+                v += i.valor;
                 lista.innerHTML += `<tr>
                     <td><input type="checkbox" class="sync-check" data-id="${i.id}" ${i.sincronizado ? 'disabled' : ''}></td>
                     <td><span style="color:${i.sincronizado ? '#4ade80' : '#ff4444'}">${i.sincronizado ? '●' : '○'}</span></td>
@@ -234,7 +281,6 @@
                 </tr>`;
             });
             document.getElementById("totalItens").innerText = inventoryData.length;
-            document.getElementById("totalHoras").innerText = h.toFixed(1);
             document.getElementById("totalValor").innerText = v.toLocaleString('pt-BR', {minimumFractionDigits:2});
         }
 
@@ -242,7 +288,6 @@
             const idEdit = document.getElementById("edit-id").value;
             const tecnico = document.getElementById("usuario_nome").value;
             if(!tecnico) return alert("Digite seu nome!");
-
             const dados = {
                 om: document.getElementById("om").value,
                 patrimonio: document.getElementById("patrimonio").value,
@@ -250,20 +295,15 @@
                 horas: Number(document.getElementById("horas").value),
                 valor: Number(document.getElementById("valor").value)
             };
-
             if(!dados.om || !dados.nome) return alert("OM e Equipamento obrigatórios!");
-
             if(idEdit) {
                 const idx = inventoryData.findIndex(i => i.id == idEdit);
-                if(inventoryData[idx].sincronizado) return alert("Item já sincronizado!");
                 inventoryData[idx] = { ...inventoryData[idx], ...dados };
             } else {
                 inventoryData.unshift({ id: Date.now(), data: new Date().toLocaleDateString('pt-BR'), tecnico, ...dados, sincronizado: false });
             }
-
             localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-            resetForm();
-            load();
+            resetForm(); load();
         }
 
         function editItem(id) {
@@ -282,9 +322,7 @@
         }
 
         function deleteItem(id) {
-            const item = inventoryData.find(i => i.id == id);
-            if(item.sincronizado) return alert("Item sincronizado não pode ser excluído.");
-            if(confirm("Excluir esta OM?")) {
+            if(confirm("Deseja excluir este item?")) {
                 inventoryData = inventoryData.filter(i => i.id != id);
                 localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
                 load();
@@ -294,20 +332,13 @@
         async function syncSelected() {
             const selectedIds = Array.from(document.querySelectorAll('.sync-check:checked')).map(cb => Number(cb.dataset.id));
             if(selectedIds.length === 0) return alert("Selecione itens novos!");
-            
             showLoader("SINCRONIZANDO...");
-            const itensParaEnviar = inventoryData.filter(i => selectedIds.includes(i.id));
-            
             try {
-                await fetch(GOOGLE_URL, {
-                    method: "POST",
-                    mode: "no-cors",
-                    body: JSON.stringify({ token: TOKEN, itens: itensParaEnviar })
-                });
+                const itensParaEnviar = inventoryData.filter(i => selectedIds.includes(i.id));
+                await fetch(GOOGLE_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ token: TOKEN, itens: itensParaEnviar }) });
                 inventoryData.forEach(i => { if(selectedIds.includes(i.id)) i.sincronizado = true; });
                 localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-                load();
-                alert("Sincronizado com sucesso!");
+                load(); alert("Sincronizado!");
             } catch(e) { alert("Erro de conexão."); }
             hideLoader();
         }
@@ -316,20 +347,16 @@
         function openTab(id, btn) {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active');
-            btn.classList.add('active');
+            document.getElementById(id).classList.add('active'); btn.classList.add('active');
         }
         function autoPreencher() {
             const it = tabelaPrecos.find(x => x.nome === document.getElementById("nome").value);
             if(it) { document.getElementById("horas").value = it.horas; document.getElementById("valor").value = it.valor.toFixed(2); }
         }
         function resetForm() {
-            document.getElementById("edit-id").value = "";
-            document.getElementById("om").value = "";
-            document.getElementById("patrimonio").value = "";
-            document.getElementById("nome").value = "";
-            document.getElementById("horas").value = "";
-            document.getElementById("valor").value = "";
+            document.getElementById("edit-id").value = ""; document.getElementById("om").value = "";
+            document.getElementById("patrimonio").value = ""; document.getElementById("nome").value = "";
+            document.getElementById("horas").value = ""; document.getElementById("valor").value = "";
             document.getElementById("form-title").innerText = "NOVO SERVIÇO";
             document.getElementById("btn-salvar").innerText = "SALVAR NO CELULAR";
             document.getElementById("btn-cancelar-edit").style.display = "none";
@@ -338,7 +365,7 @@
         function hideLoader() { document.getElementById("loader-global").style.display = "none"; }
         function salvarNomeTecnico() { localStorage.setItem("tecnico_atual", document.getElementById("usuario_nome").value); }
         function toggleAll(s) { document.querySelectorAll('.sync-check:not([disabled])').forEach(c => c.checked = s.checked); }
-        function clearAll() { if(confirm("Limpar celular? (Não apaga a planilha)")) { inventoryData=[]; localStorage.removeItem("oficina_inventory"); load(); } }
+        function clearAll() { if(confirm("Limpar celular?")) { inventoryData=[]; localStorage.removeItem("oficina_inventory"); load(); } }
     </script>
 </body>
 </html>
