@@ -3,25 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>Vertical Locações - Oficina Smart v20.3</title>
+    <title>Vertical Locações - Oficina Smart v20.10</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffcc00">
+    <link rel="apple-touch-icon" href="icon-192.png"> 
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
     <style>
         /* --- ESTILO VERTICAL (GTA STYLE) --- */
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; color: #e6eef6; }
         #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; transition: opacity 1s ease; display: flex; flex-direction: column; }
-        #bg-container { position: absolute; width: 100%; height: 100%; background-size: cover; background-position: center; background-image: url('retroescavadeira_gta.png'); filter: brightness(0.5); animation: zoomEffect 15s infinite linear; }
-        @keyframes zoomEffect { from { transform: scale(1.0); } to { transform: scale(1.15); } }
+        #bg-container { position: absolute; width: 100%; height: 100%; background-size: cover; background-position: center; background-image: url('https://images.unsplash.com/photo-1579412691525-46f34a06700c?q=80&w=1470&auto=format&fit=crop'); filter: brightness(0.4); animation: zoomEffect 15s infinite linear; }
+        @keyframes zoomEffect { from { transform: scale(1.0); } to { transform: scale(1.1); } }
         .brand-container { position: absolute; top: 10%; left: 5%; color: white; text-shadow: 3px 3px 10px rgba(0,0,0,0.8); z-index: 11; }
         .brand-name { font-size: 3.5rem; margin: 0; letter-spacing: 8px; font-weight: 900; border-left: 8px solid #ffcc00; padding-left: 20px; }
         .brand-sub { font-size: 1.5rem; margin: 0; padding-left: 28px; font-weight: 300; letter-spacing: 5px; color: #ffcc00; }
         .footer-loading { position: absolute; bottom: 50px; right: 50px; text-align: right; z-index: 11; }
         .loading-bar-container { width: 300px; height: 4px; background: rgba(255, 255, 255, 0.1); border-radius: 2px; margin-top: 10px; overflow: hidden;}
-        #progress-bar-fill { width: 0%; height: 100%; background: #ffcc00; box-shadow: 0 0 10px #ffcc00; transition: width 0.3s; }
+        #progress-bar-fill { width: 0%; height: 100%; background: #ffcc00; transition: width 0.3s; }
 
         /* --- INTERFACE --- */
         .app-content { padding: 15px; max-width: 1100px; margin: 0 auto; display: none; opacity: 0; transition: opacity 0.5s; }
@@ -39,12 +42,8 @@
         .btn-main { background:#ffcc00; color: #000; width: 100%; margin-top: 15px; }
         .btn-scan { background: #8b5cf6; color: white; margin-bottom: 15px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; border: 2px solid #a78bfa; height: 50px; }
         
-        table { width:100%; border-collapse:collapse; margin-top:10px; background: #0d1a24; font-size: 12px; }
-        th, td { padding:10px; border-bottom: 1px solid #2a3a4d; text-align: left; }
-        .action-btns { display: flex; gap: 8px; }
-        .btn-edit { background: #2b9cff; color: white; padding: 6px 10px; border-radius: 4px; }
-        .btn-del { background: #ff4444; color: white; padding: 6px 10px; border-radius: 4px; }
-
+        table { width:100%; border-collapse:collapse; margin-top:10px; background: #0d1a24; font-size: 11px; }
+        th, td { padding:8px; border-bottom: 1px solid #2a3a4d; text-align: left; }
         .stat-box { background:#0d1a24; padding:10px; border-radius:8px; text-align: center; border: 1px solid #2a3a4d; flex: 1; }
         .stat-val { font-size: 1.1em; font-weight: bold; color: #ffcc00; }
         .loader-global { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 9999; flex-direction:column; align-items:center; justify-content:center; }
@@ -71,7 +70,7 @@
     </div>
 
     <div class="app-content" id="main-app">
-        <h1 style="color:#ffcc00; border-bottom: 2px solid #ffcc00; padding-bottom: 10px; font-size: 20px;">OFICINA SMART v20.3</h1>
+        <h1 style="color:#ffcc00; border-bottom: 2px solid #ffcc00; padding-bottom: 10px; font-size: 18px;">OFICINA SMART v20.10</h1>
 
         <div class="card">
             <label>Técnico Responsável</label>
@@ -88,7 +87,7 @@
                 <h3 id="form-title" style="margin-top:0; color:#ffcc00; font-size: 14px;">NOVO SERVIÇO</h3>
                 <input type="hidden" id="edit-id">
                 
-                <label id="label-scan" class="btn-scan">📷 ESCANEAR FICHA (OCR)<input type="file" accept="image/*" capture="camera" hidden onchange="processarOCR(event)"></label>
+                <label id="label-scan" class="btn-scan">📷 ESCANEAR OM (OCR)<input type="file" accept="image/*" capture="camera" hidden onchange="processarOCR(event)"></label>
                 
                 <div class="row">
                     <div><label>OM Nº</label><input id="om" type="text"></div>
@@ -99,7 +98,7 @@
                 <select id="nome" onchange="autoPreencher()"><option value="">Selecione...</option></select>
 
                 <div class="row">
-                    <div><label>Horas Acum.</label><input id="horas" type="number" readonly style="color:#ffcc00; background:#0a121a;"></div>
+                    <div><label>Horas (Tempo)</label><input id="horas" type="number" readonly style="color:#ffcc00; background:#0a121a;"></div>
                     <div><label>Vlr Unit. (R$)</label><input id="valor" type="number" step="0.01"></div>
                 </div>
                 
@@ -109,8 +108,9 @@
         </div>
 
         <div id="tab-inventario" class="tab-content">
+            
             <div class="card" style="border: 1px solid #8b5cf6; background: #1a162d;">
-                <label style="color:#a78bfa; margin-top:0;">🔄 RESTAURAR DA NUVEM (BACKUP)</label>
+                <label style="color:#a78bfa; margin-top:0;">🔄 RESTAURAR DA NUVEM</label>
                 <div class="row">
                     <input type="month" id="filtro_mes">
                     <button onclick="importFromCloud()" style="background:#8b5cf6; color:white;">BAIXAR</button>
@@ -120,6 +120,7 @@
             <div class="card">
                 <div class="row" style="margin-bottom:15px;">
                     <div class="stat-box"><div>ITENS</div><div id="totalItens" class="stat-val">0</div></div>
+                    <div class="stat-box"><div>TOTAL HORAS</div><div id="totalHoras" class="stat-val">0.0</div></div>
                     <div class="stat-box"><div>TOTAL R$</div><div id="totalValor" class="stat-val">0,00</div></div>
                 </div>
                 
@@ -133,8 +134,8 @@
                         <thead>
                             <tr>
                                 <th><input type="checkbox" onclick="toggleAll(this)"></th>
-                                <th>Status</th>
                                 <th>OM</th>
+                                <th>Patrimônio</th>
                                 <th>Equip.</th>
                                 <th>Ações</th>
                             </tr>
@@ -148,66 +149,80 @@
     </div>
 
     <script>
-        // --- CONFIGURAÇÕES COM SUA URL NOVA ---
-        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbyiE0C-uEcW7-BIhwaXk-3gRUvP_wYMpHTaIF3cJm5LUoBgKFYhbPUqeEHt47OPP8Hp/exec"; 
+        // --- CONFIGURAÇÕES ---
+        const GOOGLE_URL = "SUA_URL_AQUI"; // << COLOQUE SEU LINK DO APPS SCRIPT AQUI
         const TOKEN = "OFICINA-SEGURA-123";
 
+        // --- LISTA ATUALIZADA (34 ITENS) ---
         const tabelaPrecos = [
-    { nome: "ACABADORA DE SUPERF", valor: 2.00, horas: 5.0 },
-    { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
-    { nome: "BANCADA DE SERRA", valor: 8.00, horas: 4.5 },
-    { nome: "BETONEIRA 150 LT", valor: 6.00, horas: 4.5 },
-    { nome: "BETONEIRA 400LT", valor: 6.00, horas: 4.5 },
-    { nome: "BETONEIRA 600LT", valor: 16.90, horas: 16.0 },
-    { nome: "BOMBA MANGOTE", valor: 4.00, horas: 3.0 },
-    { nome: "BOMBA SUBMERSA", valor: 4.00, horas: 4.0 },
-    { nome: "COMPACTADOR", valor: 3.00, horas: 4.0 },
-    { nome: "CORTADORA", valor: 3.00, horas: 4.0 },
-    { nome: "GERADOR", valor: 3.00, horas: 3.2 },
-    { nome: "GUINCHO DE ELEVAÇÃO", valor: 10.00, horas: 6.0 },
-    { nome: "MARTELO 2 KG - 220V", valor: 1.50, horas: 2.0 },
-    { nome: "MARTELO 5,7 KG-220V", valor: 1.50, horas: 2.0 },
-    { nome: "MARTELO 6 KG - 220V", valor: 1.70, horas: 2.0 },
-    { nome: "MARTELO 11 KG - ROT", valor: 2.00, horas: 2.2 },
-    { nome: "MARTELO 11 KG - 220V", valor: 1.70, horas: 2.2 },
-    { nome: "MARTELO 16/19 KG", valor: 2.00, horas: 2.3 },
-    { nome: "MARTELO 19 KG - 220V", valor: 2.00, horas: 2.5 },
-    { nome: "MARTELO 30 KG - 220V", valor: 2.00, horas: 2.5 },
-    { nome: "MINI GRUA", valor: 10.00, horas: 6.0 },
-    { nome: "MOTOR - ACIONADOR", valor: 3.00, horas: 3.0 },
-    { nome: "MOTOR - ELET_TRIFA", valor: 3.00, horas: 3.0 },
-    { nome: "PLACA VIBRATORIA", valor: 3.50, horas: 4.5 },
-    { nome: "REGUA VIBRATORIA", valor: 5.00, horas: 4.5 },
-    { nome: "TORRE DE ILUMINACAO", valor: 25.00, horas: 6.0 },
-    { nome: "UNIDADES HIDRAULICA", valor: 8.00, horas: 16.0 },
-    { nome: "VIBRADOR DE IMERSAO", valor: 2.80, horas: 4.0 },
-    { nome: "ROLO COMPACTADOR", valor: 20.00, horas: 24.0 },
-    { nome: "MINI CARREGADEIRA", valor: 34.00, horas: 16.0 },
-    { nome: "MINI ESCAVADEIRA", valor: 34.00, horas: 16.0 },
-    { nome: "VELOX", valor: 8.00, horas: 6.0 },
-    { nome: "PERFURATRIZ", valor: 25.00, horas: 6.0 },
-    { nome: "MAQUINA PESADA", valor: 34.00, horas: 16.0 }
-];
+            { nome: "ACABADORA DE SUPERF", valor: 2.00, horas: 5.0 },
+            { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
+            { nome: "BANCADA DE SERRA", valor: 8.00, horas: 4.5 },
+            { nome: "BETONEIRA 150 LT", valor: 6.00, horas: 4.5 },
+            { nome: "BETONEIRA 400LT", valor: 6.00, horas: 4.5 },
+            { nome: "BETONEIRA 600LT", valor: 16.90, horas: 16.0 },
+            { nome: "BOMBA MANGOTE", valor: 4.00, horas: 3.0 },
+            { nome: "BOMBA SUBMERSA", valor: 4.00, horas: 4.0 },
+            { nome: "COMPACTADOR", valor: 3.00, horas: 4.0 },
+            { nome: "CORTADORA", valor: 3.00, horas: 4.0 },
+            { nome: "GERADOR", valor: 3.00, horas: 3.2 },
+            { nome: "GUINCHO DE ELEVAÇÃO", valor: 10.00, horas: 6.0 },
+            { nome: "MARTELO 2 KG - 220V", valor: 1.50, horas: 2.0 },
+            { nome: "MARTELO 5,7 KG-220V", valor: 1.50, horas: 2.0 },
+            { nome: "MARTELO 6 KG - 220V", valor: 1.70, horas: 2.0 },
+            { nome: "MARTELO 11 KG - ROT", valor: 2.00, horas: 2.2 },
+            { nome: "MARTELO 11 KG - 220V", valor: 1.70, horas: 2.2 },
+            { nome: "MARTELO 16/19 KG", valor: 2.00, horas: 2.3 },
+            { nome: "MARTELO 19 KG - 220V", valor: 2.00, horas: 2.5 },
+            { nome: "MARTELO 30 KG - 220V", valor: 2.00, horas: 2.5 },
+            { nome: "MINI GRUA", valor: 10.00, horas: 6.0 },
+            { nome: "MOTOR - ACIONADOR", valor: 3.00, horas: 3.0 },
+            { nome: "MOTOR - ELET_TRIFA", valor: 3.00, horas: 3.0 },
+            { nome: "PLACA VIBRATORIA", valor: 3.50, horas: 4.5 },
+            { nome: "REGUA VIBRATORIA", valor: 5.00, horas: 4.5 },
+            { nome: "TORRE DE ILUMINACAO", valor: 25.00, horas: 6.0 },
+            { nome: "UNIDADES HIDRAULICA", valor: 8.00, horas: 16.0 },
+            { nome: "VIBRADOR DE IMERSAO", valor: 2.80, horas: 4.0 },
+            { nome: "ROLO COMPACTADOR", valor: 20.00, horas: 24.0 },
+            { nome: "MINI CARREGADEIRA", valor: 34.00, horas: 16.0 },
+            { nome: "MINI ESCAVADEIRA", valor: 34.00, horas: 16.0 },
+            { nome: "VELOX", valor: 8.00, horas: 6.0 },
+            { nome: "PERFURATRIZ", valor: 25.00, horas: 6.0 },
+            { nome: "MAQUINA PESADA", valor: 34.00, horas: 16.0 }
+        ];
 
         let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || [];
 
+        // --- INICIALIZAÇÃO ---
         window.onload = () => {
             const salvo = localStorage.getItem("tecnico_atual");
             if(salvo) document.getElementById("usuario_nome").value = salvo;
+            
             const sel = document.getElementById("nome");
             tabelaPrecos.forEach(i => sel.innerHTML += `<option value="${i.nome}">${i.nome}</option>`);
+            
             load();
             startLoading();
         };
 
+        // --- REGISTRO DO SERVICE WORKER (PWA) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./service_worker.js')
+                    .then(reg => console.log('SW registrado:', reg.scope))
+                    .catch(err => console.log('Falha no SW:', err));
+            });
+        }
+
+        // --- SISTEMA DE LOADING ---
         function startLoading() {
             let p = 0;
             const fill = document.getElementById('progress-bar-fill');
             const interval = setInterval(() => {
-                p += 10;
-                if(fill) fill.style.width = Math.min(p, 100) + "%";
+                p += 20;
+                if(fill) fill.style.width = p + "%";
                 if(p >= 100) { clearInterval(interval); finishLoading(); }
-            }, 100);
+            }, 150);
         }
 
         function finishLoading() {
@@ -218,86 +233,82 @@
                     screen.style.display = 'none';
                     document.getElementById('main-app').style.display = 'block';
                     setTimeout(() => document.getElementById('main-app').style.opacity = '1', 50);
-                }, 1000);
+                }, 800);
             }
         }
 
-        // --- OCR OTIMIZADO ---
-        async function processarOCR(event) {
-            const arquivo = event.target.files[0];
-            if (!arquivo) return;
-            showLoader("CARREGANDO MOTOR...");
-            try {
-                const worker = await Tesseract.createWorker({
-                    logger: m => { if(m.status === 'recognizing text') showLoader(`LENDO: ${Math.floor(m.progress * 100)}%`); }
-                });
-                await worker.loadLanguage('por');
-                await worker.initialize('por');
-                const { data: { text } } = await worker.recognize(arquivo);
-                const textoLimpo = text.toUpperCase();
-                const matchOM = textoLimpo.match(/(?:OM|ORDEM)\s*[:\-\s]*(\d{3,})/i) || textoLimpo.match(/\d{5,}/);
-                if (matchOM) { 
-                    document.getElementById('om').value = Array.isArray(matchOM) ? (matchOM[1] || matchOM[0]) : matchOM;
-                    alert("OM Identificada!");
-                }
-                await worker.terminate();
-            } catch (e) { alert("Erro ao processar imagem."); }
-            hideLoader();
-        }
-
-        // --- BACKUP (IMPORTAR DA NUVEM) ---
-        async function importFromCloud() {
-            const tecnico = document.getElementById("usuario_nome").value;
-            const mesFiltro = document.getElementById("filtro_mes").value;
-            if (!tecnico || !mesFiltro) return alert("Identifique o Técnico e o Mês!");
-
-            showLoader("BUSCANDO NA NUVEM...");
-            try {
-                // Envia action=getBackup para o doGet do Apps Script
-                const urlBusca = `${GOOGLE_URL}?action=getBackup&usuario=${encodeURIComponent(tecnico)}&mes=${mesFiltro}`;
-                const response = await fetch(urlBusca);
-                const resultado = await response.json();
-
-                if (resultado.itens && resultado.itens.length > 0) {
-                    const novosItens = resultado.itens.filter(n => !inventoryData.some(l => l.id == n.id));
-                    if (novosItens.length === 0) { alert("Todos os dados já estão no celular."); }
-                    else {
-                        inventoryData = [...novosItens, ...inventoryData];
-                        localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-                        load();
-                        alert(`${novosItens.length} itens recuperados!`);
-                    }
-                } else { alert("Nenhum dado encontrado para este técnico neste mês."); }
-            } catch (e) { alert("Erro ao conectar com o servidor da planilha."); }
-            hideLoader();
-        }
-
-        // --- FUNÇÕES DE LISTAGEM ---
+        // --- LISTAGEM E TOTAIS ---
         function load() {
             const lista = document.getElementById("lista");
             lista.innerHTML = "";
             let v = 0;
+            let h = 0; // Total de Horas
+
             inventoryData.forEach(i => {
                 v += i.valor;
+                h += Number(i.horas) || 0; // Soma horas convertendo para número
+                
                 lista.innerHTML += `<tr>
                     <td><input type="checkbox" class="sync-check" data-id="${i.id}" ${i.sincronizado ? 'disabled' : ''}></td>
-                    <td><span style="color:${i.sincronizado ? '#4ade80' : '#ff4444'}">${i.sincronizado ? '●' : '○'}</span></td>
                     <td>${i.om}</td>
+                    <td style="color:#ffcc00; font-weight:bold;">${i.patrimonio || '---'}</td>
                     <td>${i.nome}</td>
                     <td class="action-btns">
-                        <button class="btn-edit" onclick="editItem(${i.id})">✎</button>
-                        <button class="btn-del" onclick="deleteItem(${i.id})">✖</button>
+                        <button onclick="editItem(${i.id})" style="background:#2b9cff; color:white; padding:4px;">✎</button>
                     </td>
                 </tr>`;
             });
+
             document.getElementById("totalItens").innerText = inventoryData.length;
+            document.getElementById("totalHoras").innerText = h.toFixed(1); // Exibe com 1 casa decimal
             document.getElementById("totalValor").innerText = v.toLocaleString('pt-BR', {minimumFractionDigits:2});
         }
 
+        // --- FUNÇÃO DE RESTAURAR (BACKUP DA NUVEM) ---
+        async function importFromCloud() {
+            const tecnico = document.getElementById("usuario_nome").value;
+            const mesFiltro = document.getElementById("filtro_mes").value;
+            if (!tecnico || !mesFiltro) return alert("Preencha Técnico e Mês!");
+            
+            showLoader("BUSCANDO NA NUVEM...");
+            
+            // Timeout de segurança (15 segundos)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+            try {
+                const response = await fetch(`${GOOGLE_URL}?action=getBackup&usuario=${encodeURIComponent(tecnico)}&mes=${mesFiltro}`, { signal: controller.signal });
+                const resultado = await response.json();
+                clearTimeout(timeoutId);
+                
+                if (resultado.itens && resultado.itens.length > 0) {
+                    // Filtra para não duplicar o que já está no celular
+                    const novosItens = resultado.itens.filter(n => !inventoryData.some(l => l.id == n.id));
+                    
+                    if (novosItens.length === 0) { 
+                        alert("Todos os dados desse mês já estão no celular."); 
+                    } else {
+                        inventoryData = [...novosItens, ...inventoryData];
+                        localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
+                        load();
+                        alert(`${novosItens.length} itens recuperados com sucesso!`);
+                    }
+                } else { 
+                    alert("Nenhum dado encontrado para este mês na nuvem."); 
+                }
+            } catch (e) { 
+                if (e.name === 'AbortError') alert("A conexão demorou muito. Verifique sua internet.");
+                else alert("Erro de conexão. Verifique se a Planilha está implantada."); 
+            }
+            hideLoader();
+        }
+
+        // --- CRUD E SINCRONIZAÇÃO ---
         function addItem() {
             const idEdit = document.getElementById("edit-id").value;
             const tecnico = document.getElementById("usuario_nome").value;
             if(!tecnico) return alert("Digite seu nome!");
+            
             const dados = {
                 om: document.getElementById("om").value,
                 patrimonio: document.getElementById("patrimonio").value,
@@ -305,63 +316,80 @@
                 horas: Number(document.getElementById("horas").value),
                 valor: Number(document.getElementById("valor").value)
             };
+            
             if(!dados.om || !dados.nome) return alert("OM e Equipamento obrigatórios!");
+            
             if(idEdit) {
                 const idx = inventoryData.findIndex(i => i.id == idEdit);
                 inventoryData[idx] = { ...inventoryData[idx], ...dados };
             } else {
                 inventoryData.unshift({ id: Date.now(), data: new Date().toLocaleDateString('pt-BR'), tecnico, ...dados, sincronizado: false });
             }
+            
             localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
             resetForm(); load();
         }
 
         function editItem(id) {
             const item = inventoryData.find(i => i.id == id);
-            if(item.sincronizado) return alert("Item sincronizado não pode ser editado.");
+            if(item.sincronizado) return alert("Item sincronizado não pode ser editado para segurança.");
+            
             document.getElementById("edit-id").value = item.id;
             document.getElementById("om").value = item.om;
             document.getElementById("patrimonio").value = item.patrimonio;
             document.getElementById("nome").value = item.nome;
             document.getElementById("horas").value = item.horas;
             document.getElementById("valor").value = item.valor;
-            document.getElementById("form-title").innerText = "🟡 EDITANDO SERVIÇO";
+            
+            document.getElementById("form-title").innerText = "EDITANDO SERVIÇO";
             document.getElementById("btn-salvar").innerText = "ATUALIZAR";
             document.getElementById("btn-cancelar-edit").style.display = "block";
             openTab('tab-entrada', document.getElementById('tab-btn-entrada'));
         }
 
-        function deleteItem(id) {
-            if(confirm("Deseja excluir este item?")) {
-                inventoryData = inventoryData.filter(i => i.id != id);
-                localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-                load();
-            }
-        }
-
         async function syncSelected() {
             const selectedIds = Array.from(document.querySelectorAll('.sync-check:checked')).map(cb => Number(cb.dataset.id));
-            if(selectedIds.length === 0) return alert("Selecione itens novos!");
+            if(selectedIds.length === 0) return alert("Selecione itens para sincronizar!");
+            
             showLoader("SINCRONIZANDO...");
             try {
                 const itensParaEnviar = inventoryData.filter(i => selectedIds.includes(i.id));
                 await fetch(GOOGLE_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ token: TOKEN, itens: itensParaEnviar }) });
+                
                 inventoryData.forEach(i => { if(selectedIds.includes(i.id)) i.sincronizado = true; });
                 localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-                load(); alert("Sincronizado!");
-            } catch(e) { alert("Erro de conexão."); }
+                
+                load(); alert("Sincronizado com sucesso!");
+            } catch(e) { alert("Erro ao conectar com a planilha."); }
             hideLoader();
         }
 
-        // --- AUXILIARES ---
+        // --- UTILITÁRIOS ---
+        function autoPreencher() {
+            const it = tabelaPrecos.find(x => x.nome === document.getElementById("nome").value);
+            if(it) { document.getElementById("horas").value = it.horas; document.getElementById("valor").value = it.valor.toFixed(2); }
+        }
+        
+        async function processarOCR(event) {
+            const arquivo = event.target.files[0];
+            if (!arquivo) return;
+            showLoader("LENDO OM...");
+            try {
+                const worker = await Tesseract.createWorker();
+                await worker.loadLanguage('por');
+                await worker.initialize('por');
+                const { data: { text } } = await worker.recognize(arquivo);
+                const matchOM = text.match(/\d{4,}/);
+                if (matchOM) document.getElementById('om').value = matchOM[0];
+                await worker.terminate();
+            } catch (e) { alert("Não foi possível ler a imagem."); }
+            hideLoader();
+        }
+
         function openTab(id, btn) {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
             document.getElementById(id).classList.add('active'); btn.classList.add('active');
-        }
-        function autoPreencher() {
-            const it = tabelaPrecos.find(x => x.nome === document.getElementById("nome").value);
-            if(it) { document.getElementById("horas").value = it.horas; document.getElementById("valor").value = it.valor.toFixed(2); }
         }
         function resetForm() {
             document.getElementById("edit-id").value = ""; document.getElementById("om").value = "";
@@ -375,7 +403,37 @@
         function hideLoader() { document.getElementById("loader-global").style.display = "none"; }
         function salvarNomeTecnico() { localStorage.setItem("tecnico_atual", document.getElementById("usuario_nome").value); }
         function toggleAll(s) { document.querySelectorAll('.sync-check:not([disabled])').forEach(c => c.checked = s.checked); }
-        function clearAll() { if(confirm("Limpar celular?")) { inventoryData=[]; localStorage.removeItem("oficina_inventory"); load(); } }
+        function clearAll() { if(confirm("Tem certeza? Isso limpa apenas a memória do celular.")) { inventoryData=[]; localStorage.removeItem("oficina_inventory"); load(); } }
+        
+        async function generatePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+            const tecnico = document.getElementById("usuario_nome").value || "Tecnico";
+            
+            // Cabeçalho PDF
+            doc.setFillColor(255, 204, 0); doc.rect(0, 0, 210, 20, 'F');
+            doc.setFontSize(16); doc.text(`RELATÓRIO - ${tecnico}`, 105, 13, null, null, "center");
+            
+            const body = inventoryData.map(i => [i.data, i.om, i.patrimonio || "-", i.nome, i.horas, i.valor.toFixed(2)]);
+            
+            doc.autoTable({ 
+                head: [['Data', 'OM', 'Patr.', 'Equip.', 'Hrs', 'Valor']], 
+                body: body, 
+                startY: 25,
+                theme: 'grid'
+            });
+
+            // Rodapé com Totais
+            const totalH = inventoryData.reduce((acc, i) => acc + (Number(i.horas)||0), 0);
+            const totalV = inventoryData.reduce((acc, i) => acc + i.valor, 0);
+            
+            doc.setFontSize(12);
+            const finalY = doc.lastAutoTable.finalY + 10;
+            doc.text(`TOTAL HORAS: ${totalH.toFixed(1)}`, 14, finalY);
+            doc.text(`TOTAL VALOR: R$ ${totalV.toFixed(2)}`, 150, finalY);
+
+            doc.save(`Relatorio_${tecnico}.pdf`);
+        }
     </script>
 </body>
 </html>
