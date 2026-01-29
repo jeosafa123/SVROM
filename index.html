@@ -370,21 +370,129 @@
             if(it) { document.getElementById("horas").value = it.horas; document.getElementById("valor").value = it.valor.toFixed(2); }
         }
         
+        /* ==========================================================
+           🔹 OCR SMART – IMPLEMENTADO (ATUALIZADO)
+           ========================================================== */
+        
         async function processarOCR(event) {
             const arquivo = event.target.files[0];
             if (!arquivo) return;
-            showLoader("LENDO OM...");
+
+            showLoader("LENDO ORDEM DE MANUTENÇÃO...");
+
             try {
                 const worker = await Tesseract.createWorker();
-                await worker.loadLanguage('por');
-                await worker.initialize('por');
-                const { data: { text } } = await worker.recognize(arquivo);
-                const matchOM = text.match(/\d{4,}/);
-                if (matchOM) document.getElementById('om').value = matchOM[0];
+                await worker.loadLanguage("por");
+                await worker.initialize("por");
+
+                // 🔥 Pré-processamento aplicado
+                const canvas = await preprocessarImagem(arquivo);
+                const { data: { text } } = await worker.recognize(canvas);
+
                 await worker.terminate();
-            } catch (e) { alert("Não foi possível ler a imagem."); }
+
+                const dados = mapearCamposOM(text);
+                const erros = [];
+
+                if (dados.om) {
+                    document.getElementById("om").value = dados.om;
+                } else {
+                    erros.push("OM não encontrada");
+                }
+
+                if (dados.patrimonio) {
+                    document.getElementById("patrimonio").value = dados.patrimonio;
+                } else {
+                    erros.push("Patrimônio não encontrado");
+                }
+
+                if (erros.length > 0) {
+                    logErroOCR({
+                        arquivo: arquivo.name || "camera",
+                        erros,
+                        textoOCR: text.substring(0, 500)
+                    });
+                }
+
+                console.log("OCR TEXTO:", text);
+
+            } catch (e) {
+                logErroOCR({
+                    arquivo: arquivo?.name || "camera",
+                    erros: ["Falha geral no OCR"],
+                    detalhe: e.message
+                });
+                alert("Não foi possível ler a imagem.");
+                console.error(e);
+            }
+
             hideLoader();
         }
+
+        /* --- FUNÇÕES AUXILIARES DO OCR SMART --- */
+
+        async function preprocessarImagem(file) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                const reader = new FileReader();
+
+                reader.onload = () => {
+                    img.onload = () => {
+                        const canvas = document.createElement("canvas");
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext("2d");
+
+                        ctx.drawImage(img, 0, 0);
+
+                        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        const data = imgData.data;
+
+                        for (let i = 0; i < data.length; i += 4) {
+                            const gray = data[i] * 0.3 + data[i + 1] * 0.59 + data[i + 2] * 0.11;
+                            const bw = gray > 150 ? 255 : 0;
+                            data[i] = data[i + 1] = data[i + 2] = bw;
+                        }
+
+                        ctx.putImageData(imgData, 0, 0);
+                        resolve(canvas);
+                    };
+                    img.src = reader.result;
+                };
+
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function extrairCampo(regex, texto) {
+            const m = texto.match(regex);
+            return m ? m[1].trim() : "";
+        }
+
+        function mapearCamposOM(texto) {
+            return {
+                om: extrairCampo(/OM\s*N[º°]?\s*(\d+)/i, texto),
+                patrimonio: extrairCampo(/Patrim[oô]nio[:\s]*([A-Z0-9]+)/i, texto)
+            };
+        }
+
+        function logErroOCR(info) {
+            const logs = JSON.parse(localStorage.getItem("ocr_logs")) || [];
+
+            logs.unshift({
+                data: new Date().toLocaleString("pt-BR"),
+                ...info
+            });
+
+            if (logs.length > 50) logs.length = 50;
+            localStorage.setItem("ocr_logs", JSON.stringify(logs));
+        }
+
+        function listarLogsOCR() {
+            return JSON.parse(localStorage.getItem("ocr_logs")) || [];
+        }
+
+        /* --- FIM DO OCR SMART --- */
 
         function openTab(id, btn) {
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -436,7 +544,6 @@
         }
     </script>
 
-    <!-- Vercel Speed Insights -->
     <script>
         window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
     </script>
