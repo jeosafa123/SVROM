@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>Vertical Locações - Oficina Smart v21.2</title>
+    <title>Vertical Locações - Oficina Smart v21.3</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -40,9 +40,7 @@
             transition: all 0.3s ease;
         }
         
-        .card-hardware:hover {
-            border-color: rgba(255, 204, 0, 0.2);
-        }
+        .card-hardware:hover { border-color: rgba(255, 204, 0, 0.2); }
         
         .input-hardware { 
             background: rgba(0,0,0,0.5); 
@@ -61,11 +59,7 @@
             box-shadow: 0 0 0 2px rgba(255, 204, 0, 0.15);
         }
         
-        .input-readonly { 
-            color: var(--primary); 
-            font-weight: 900; 
-            background: rgba(0,0,0,0.7); 
-        }
+        .input-readonly { color: var(--primary); font-weight: 900; background: rgba(0,0,0,0.7); }
         
         .btn-primary { 
             background: var(--primary); 
@@ -89,9 +83,7 @@
             box-shadow: 0 4px 15px rgba(255, 204, 0, 0.3);
         }
         
-        .btn-primary:active {
-            transform: translateY(0);
-        }
+        .btn-primary:active { transform: translateY(0); }
         
         .nav-bottom { 
             background: rgba(10,10,10,0.98); 
@@ -118,13 +110,8 @@
             transition: all 0.2s ease;
         }
         
-        .nav-item:hover {
-            color: #999;
-        }
-        
-        .nav-item.active { 
-            color: var(--primary); 
-        }
+        .nav-item:hover { color: #999; }
+        .nav-item.active { color: var(--primary); }
         
         #loading-screen { 
             position: fixed; 
@@ -164,56 +151,19 @@
             justify-content:center; 
         }
         
-        .table-container { 
-            max-height: calc(100vh - 320px); 
-            overflow-y: auto; 
-        }
+        .table-container { max-height: calc(100vh - 320px); overflow-y: auto; }
+        .table-container::-webkit-scrollbar { width: 4px; }
+        .table-container::-webkit-scrollbar-track { background: rgba(255,255,255,0.05); }
+        .table-container::-webkit-scrollbar-thumb { background: var(--primary); border-radius: 2px; }
         
-        .table-container::-webkit-scrollbar {
-            width: 4px;
-        }
+        tr.sincronizado { border-left: 4px solid #22c55e; background: rgba(34, 197, 94, 0.08); }
+        tr.pendente { border-left: 4px solid #ef4444; }
+        .status-dot { animation: pulse 2s infinite; }
         
-        .table-container::-webkit-scrollbar-track {
-            background: rgba(255,255,255,0.05);
-        }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+        .timer-display { font-variant-numeric: tabular-nums; text-shadow: 0 0 30px rgba(255, 204, 0, 0.4); }
         
-        .table-container::-webkit-scrollbar-thumb {
-            background: var(--primary);
-            border-radius: 2px;
-        }
-        
-        tr.sincronizado { 
-            border-left: 4px solid #22c55e; 
-            background: rgba(34, 197, 94, 0.08); 
-        }
-        
-        tr.pendente {
-            border-left: 4px solid #ef4444;
-        }
-        
-        .status-dot {
-            animation: pulse 2s infinite;
-        }
-        
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
-        }
-        
-        .timer-display {
-            font-variant-numeric: tabular-nums;
-            text-shadow: 0 0 30px rgba(255, 204, 0, 0.4);
-        }
-        
-        .chart-container {
-            position: relative;
-        }
-        
-        select option {
-            background: #141414;
-            color: #fff;
-            padding: 10px;
-        }
+        select option { background: #141414; color: #fff; padding: 10px; }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col">
@@ -221,7 +171,6 @@
     <div id="loading-screen">
         <div class="brand-name">VERTICAL</div>
         <p class="text-[var(--primary)] text-[11px] font-bold tracking-[6px] mt-2">SISTEMAS</p>
-        <p class="text-gray-500 text-[9px] font-bold tracking-[3px] mt-1 uppercase">Oficina Smart v21.2</p>
         <div class="w-40 h-1.5 bg-white/10 mt-8 rounded-full overflow-hidden">
             <div id="progress-fill" class="h-full bg-[var(--primary)] transition-all duration-300" style="width: 0%"></div>
         </div>
@@ -238,7 +187,7 @@
             <p class="text-gray-400 text-[8px] font-bold uppercase tracking-widest">Manutencao & Logistica</p>
         </div>
         <div class="flex items-center gap-3">
-            <div id="status-sync" class="w-3.5 h-3.5 rounded-full bg-red-600 shadow-[0_0_12px_red] status-dot" title="Status de sincronizacao"></div>
+            <div id="status-sync" class="w-3.5 h-3.5 rounded-full bg-red-600 shadow-[0_0_12px_red] status-dot" title="Status"></div>
             <button onclick="showSyncStatus()" class="text-gray-500 hover:text-[var(--primary)] transition-colors">
                 <i data-lucide="info" class="w-4 h-4"></i>
             </button>
@@ -256,7 +205,6 @@
                 </div>
                 <div class="card-hardware p-3 border-b-2 border-b-green-500">
                     <p class="text-[7px] font-black text-gray-500 uppercase">Faturado</p>
-                    <!-- CORREÇÃO: Exibindo valor formatado com 2 casas decimais -->
                     <h2 id="d-valor" class="text-xl font-black text-green-500">R$ 0,00</h2>
                 </div>
                 <div class="card-hardware p-3 border-b-2 border-b-blue-500">
@@ -276,21 +224,9 @@
                 </div>
             </div>
             
-            <div class="card-hardware p-4 chart-container">
+            <div class="card-hardware p-4">
                 <p class="text-[8px] font-black text-gray-500 uppercase mb-3">Ultimos Servicos (Valor R$)</p>
                 <canvas id="mainChart" height="130"></canvas>
-            </div>
-            
-            <div class="card-hardware p-4">
-                <p class="text-[8px] font-black text-gray-500 uppercase mb-3">Acesso Rapido</p>
-                <div class="grid grid-cols-2 gap-2">
-                    <button onclick="nav('lancamento')" class="btn-primary bg-green-700 text-white text-[10px] py-2">
-                        <i data-lucide="plus" class="w-3 h-3"></i> Nova OM
-                    </button>
-                    <button onclick="nav('lista')" class="btn-primary bg-indigo-700 text-white text-[10px] py-2">
-                        <i data-lucide="list" class="w-3 h-3"></i> Ver Lista
-                    </button>
-                </div>
             </div>
         </section>
 
@@ -305,13 +241,14 @@
 
             <div class="card-hardware p-4 space-y-4">
                 <div class="grid grid-cols-2 gap-3">
+                    <!-- ALTERAÇÃO: Inputs de data agora são editáveis (removido readonly) -->
                     <div>
                         <label class="text-[8px] font-black text-gray-500 uppercase mb-1 block">Data Inicio</label>
-                        <input type="text" id="f-abertura" class="input-hardware" readonly placeholder="Automatico">
+                        <input type="text" id="f-abertura" class="input-hardware" placeholder="DD/MM/AAAA HH:MM">
                     </div>
                     <div>
                         <label class="text-[8px] font-black text-gray-500 uppercase mb-1 block">Data Termino</label>
-                        <input type="text" id="f-entrega" class="input-hardware" readonly placeholder="Automatico">
+                        <input type="text" id="f-entrega" class="input-hardware" placeholder="DD/MM/AAAA HH:MM">
                     </div>
                 </div>
                 
@@ -377,10 +314,6 @@
                         <i data-lucide="upload-cloud"></i> Sincronizar
                     </button>
                 </div>
-                <div class="flex items-center justify-between text-[9px]">
-                    <span class="text-gray-500">Selecionados: <span id="count-selected" class="text-[var(--primary)] font-black">0</span></span>
-                    <button onclick="toggleAllVisible()" class="text-[var(--primary)] font-bold uppercase hover:underline">Selecionar Todos</button>
-                </div>
             </div>
 
             <div class="card-hardware overflow-hidden">
@@ -388,9 +321,7 @@
                     <table class="w-full text-left text-[11px]">
                         <thead class="bg-white/10 text-[var(--primary)] font-black uppercase text-[8px] tracking-widest sticky top-0">
                             <tr>
-                                <th class="p-3 w-8">
-                                    <input type="checkbox" id="check-all" onclick="toggleAll(this)">
-                                </th>
+                                <th class="p-3 w-8"><input type="checkbox" id="check-all" onclick="toggleAll(this)"></th>
                                 <th class="p-3">Servico (OM / MAQ / PAT)</th>
                                 <th class="p-3 text-right">Financeiro</th>
                                 <th class="p-3 w-8 text-center">Acoes</th>
@@ -441,7 +372,7 @@
                     </div>
                     <div class="bg-white/5 p-3 rounded">
                         <p class="text-[7px] text-gray-500 uppercase">Versao</p>
-                        <p class="text-lg font-black text-gray-400">21.2</p>
+                        <p class="text-lg font-black text-gray-400">21.3</p>
                     </div>
                 </div>
             </div>
@@ -471,34 +402,47 @@
 
     <script>
         // ==================== CONFIGURACOES ====================
-        // COLOQUE SUA URL DO GOOGLE APPS SCRIPT ABAIXO
-        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbxiqT9wxruzcOzrMjGd5wKQIeQj0H8GzJZ51QsL-l2NeZtrEf4_Pv9C9taQCYXQKWS6/exec"; 
+        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwLyqim33McWCBNZ4Pc5LQJygGcR0ZGMtKCvUO3xB5haixT_fU2d_3-h8h-bZL_5u5A/exec"; 
         const TOKEN = "OFICINA-SEGURA-123";
         
+        // ATUALIZAÇÃO: Lista com 37 máquinas
         const tabelaPrecos = [
-            { nome: "ACABADORA DE SUPERF", valor: 2.00, horas: 5.0 },
-            { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
-            { nome: "BANCADA DE SERRA", valor: 8.00, horas: 4.5 },
-            { nome: "BETONEIRA 150 LT", valor: 6.00, horas: 4.5 },
-            { nome: "BETONEIRA 400LT", valor: 6.00, horas: 4.5 },
-            { nome: "BETONEIRA 600LT", valor: 16.90, horas: 16.0 },
-            { nome: "BOMBA MANGOTE", valor: 4.00, horas: 3.0 },
-            { nome: "BOMBA SUBMERSA", valor: 4.00, horas: 4.0 },
-            { nome: "COMPACTADOR", valor: 3.00, horas: 4.0 },
-            { nome: "CORTADORA", valor: 3.00, horas: 4.0 },
-            { nome: "GERADOR", valor: 3.00, horas: 3.2 },
-            { nome: "GUINCHO DE ELEVACAO", valor: 10.00, horas: 6.0 },
-            { nome: "MARTELO 2 KG", valor: 1.50, horas: 2.0 },
-            { nome: "MARTELO 6 KG", valor: 1.70, horas: 2.0 },
-            { nome: "MARTELO 11 KG", valor: 1.70, horas: 2.2 },
-            { nome: "MARTELO 19 KG", valor: 2.00, horas: 2.5 },
-            { nome: "MARTELO 30 KG", valor: 2.00, horas: 2.5 },
-            { nome: "MOTOR - ACIONADOR", valor: 3.00, horas: 3.0 },
-            { nome: "PLACA VIBRATORIA", valor: 3.50, horas: 4.5 },
-            { nome: "VIBRADOR IMERSAO", valor: 2.80, horas: 4.0 },
-            { nome: "ROLO COMPACTADOR", valor: 20.00, horas: 24.0 },
-            { nome: "MAQUINA PESADA", valor: 34.00, horas: 16.0 }
-        ];
+            {  nome : "ACABADORA DE SUPERF" ,  valor : 2.00 ,  horas : 5.0  } ,
+            {  nome : "BALANCIM CADEIRINHA" ,  valor : 2,00 ,  horas : 2,25  } ,
+            {  nome : "BANCADA DE SERRA" ,  valor : 8,00 ,  horas : 4,5  } ,
+            {  nome : "BETONEIRA 150 LT" ,  valor : 6,00 ,  horas : 4,5  } ,
+            {  nome : "BETONEIRA 400LT" ,  valor : 6,00 ,  horas : 4,5  } ,
+            {  nome : "BETONEIRA 600LT" ,  valor : 16,90 ,  horas : 16,0  } ,
+            {  nome : "BOMBA MANGOTE" ,  valor : 4,00 ,  horas : 3,0  } ,
+            {  nome : "BOMBA SUBMERSA" ,  valor : 4,00 ,  horas : 4,0  } ,
+            {  nome : "COMPACTADOR" ,  valor : 3,00 ,  horas : 4,0  } ,
+            {  nome : "CORTADORA" ,  valor : 3,00 ,  horas : 4,0  } ,
+            {  nome : "GERADOR" ,  valor : 3,00 ,  horas : 3,2  } ,
+            {  nome : "GUINCHO DE ELEVAÇÃO" ,  valor : 10.00 ,  horas : 6.0  } ,
+            {  nome : "MARTELO 2 KG - 220V" ,  valor : 1,50 ,  horas : 2,0  } ,
+            {  nome : "MARTELO 5,7 KG-220V" ,  valor : 1,50 ,  horas : 2,0  } ,
+            {  nome : "MARTELO 6 KG - 220V" ,  valor : 1,70 ,  horas : 2,0  } ,
+            {  nome : "MARTELO 11 KG - ROT" ,  valor : 2,00 ,  horas : 2,2  } ,
+            {  nome : "MARTELO 11 KG - 220V" ,  valor : 1,70 ,  horas : 2,2  } ,
+            {  nome : "MARTELO 16/19 KG" ,  valor : 2,00 ,  horas : 2,3  } ,
+            {  nome : "MARTELO 19 KG - 220V" ,  valor : 2,00 ,  horas : 2,5  } ,
+            {  nome : "MARTELO 30 KG - 220V" ,  valor : 2,00 ,  horas : 2,5  } ,
+            {  nome : "MINI GRUA" ,  valor : 10,00 ,  horas : 6,0  } ,
+            {  nome : "MOTOR - ACIONADOR" ,  valor : 3,00 ,  horas : 3,0  } ,
+            {  nome : "MOTOR - ELET_TRIFA" ,  valor : 3,00 ,  horas : 3,0  } ,
+            {  nome : "PLACA VIBRATORIA" ,  valor : 3,50 ,  horas : 4,5  } ,
+            {  nome : "REGUA VIBRATORIA" ,  valor : 5,00 ,  horas : 4,5  } ,
+            {  nome : "TORRE DE ILUMINAÇÃO" ,  valor : 25,00 ,  horas : 6,0  } ,
+            {  nome : "MINI TORRE DE ILUMINAÇÃO" ,  valor : 2,00 ,  horas : 2,0  } ,
+            {  nome : "UNIDADES HIDRÁULICA" ,  valor : 8,00 ,  horas : 16,0  } ,
+            {  nome : "VIBRADOR DE IMERSÃO" ,  valor : 2,80 ,  horas : 4,0  } ,
+            {  nome : "ROLO COMPACTADOR" ,  valor : 20,00 ,  horas : 24,0  } ,
+            {  nome : "MINI CARREGADEIRA" ,  valor : 34,00 ,  horas : 16,0  } ,
+            {  nome : "MINI ESCAVADEIRA" ,  valor : 34,00 ,  horas : 16,0  } ,
+            {  nome : "VELOX" ,  valor : 8,00 ,  horas : 6,0  } ,
+            {  nome : "PERFURATRIZ" ,  valor : 25,00 ,  horas : 6,0  } ,
+            {  nome : "MAQUINA PESADA" ,  valor : 34,00 ,  horas : 16,0  }
+        ] ;
 
         let inventoryData = [];
         let timer = { active: false, sec: 0, interval: null };
@@ -506,7 +450,6 @@
 
         // ==================== INICIALIZACAO ====================
         window.onload = function() {
-            // Animacao de loading
             const fill = document.getElementById('progress-fill');
             let progress = 0;
             
@@ -526,18 +469,11 @@
                 }
             }, 120);
 
-            // Carregar dados
             try {
                 const savedData = localStorage.getItem("oficina_inventory");
-                if(savedData) {
-                    inventoryData = JSON.parse(savedData);
-                }
-            } catch(e) {
-                console.error("Erro ao carregar dados:", e);
-                inventoryData = [];
-            }
+                if(savedData) { inventoryData = JSON.parse(savedData); }
+            } catch(e) { inventoryData = []; }
 
-            // Preencher select de maquinas
             const selectMaq = document.getElementById("f-maq");
             tabelaPrecos.forEach(function(item) {
                 const option = document.createElement("option");
@@ -546,21 +482,14 @@
                 selectMaq.appendChild(option);
             });
 
-            // Carregar nome do tecnico
             const nomeSalvo = localStorage.getItem("tecnico_atual");
-            if(nomeSalvo) {
-                document.getElementById("usuario_nome").value = nomeSalvo;
-            }
+            if(nomeSalvo) { document.getElementById("usuario_nome").value = nomeSalvo; }
 
-            // Definir mes atual no filtro
             const hoje = new Date();
             const mesAtual = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
             document.getElementById("filtro_mes").value = mesAtual;
 
-            // Inicializar icones
             lucide.createIcons();
-            
-            // Carregar interface
             loadInterface();
         };
 
@@ -599,6 +528,7 @@
                 timer.sec = 0;
                 btn.innerHTML = '<i data-lucide="square" class="w-4 h-4"></i> Finalizar Trabalho';
                 btn.classList.remove('bg-green-600'); btn.classList.add('bg-red-600');
+                // Preenche automaticamente, mas continua editável
                 document.getElementById('f-abertura').value = new Date().toLocaleString('pt-BR');
                 document.getElementById('f-entrega').value = "";
                 timer.interval = setInterval(function() { timer.sec++; updateTimerDisplay(); }, 1000);
@@ -658,6 +588,12 @@
         }
 
         // ==================== CARREGAR INTERFACE ====================
+        // CORREÇÃO: Função auxiliar para garantir conversão de número
+        function parseValor(val) {
+            if (!val) return 0;
+            return parseFloat(String(val).replace(',', '.')) || 0;
+        }
+
         function loadInterface() {
             const tbody = document.getElementById('t-body');
             const query = document.getElementById('search-om').value.toLowerCase().trim();
@@ -670,7 +606,6 @@
                 });
             }
 
-            // Renderizar tabela
             if(filtered.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center opacity-30 text-[9px] font-bold uppercase">Nenhum registro</td></tr>';
             } else {
@@ -698,29 +633,30 @@
                 }).join('');
             }
 
-            // Calcular estatisticas
             const totalRegistros = inventoryData.length;
             const sincronizados = inventoryData.filter(i => i.sincronizado).length;
             const pendentes = totalRegistros - sincronizados;
             
-            // Faturamento: Apenas "Liberado" ou "Aguardando Peças com Indenização"
+            // CORREÇÃO: Calcula faturamento usando parseValor para evitar erros com texto
             const validados = inventoryData.filter(function(i) { 
                 return i.status === "Liberado" || (i.status === "Aguardando Pecas" && i.indenizacao);
             });
             
-            const sumValor = validados.reduce((acc, item) => acc + (Number(item.valor) || 0), 0);
-            const sumHoras = inventoryData.reduce((acc, item) => acc + (Number(item.horas) || 0), 0);
+            const sumValor = validados.reduce(function(acc, item) { 
+                return acc + parseValor(item.valor);
+            }, 0);
 
-            // Atualizar Dashboard
+            const sumHoras = inventoryData.reduce(function(acc, item) { 
+                return acc + parseValor(item.horas);
+            }, 0);
+
             document.getElementById('d-total').innerText = totalRegistros;
-            // CORREÇÃO: Formatar moeda corretamente
             document.getElementById('d-valor').innerText = sumValor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
             document.getElementById('d-horas').innerText = sumHoras.toFixed(1);
             document.getElementById('d-pendentes').innerText = pendentes;
             document.getElementById('d-sincronizados').innerText = sincronizados;
             document.getElementById('stat-locais').innerText = totalRegistros;
 
-            // Status Sync
             const statusEl = document.getElementById('status-sync');
             statusEl.className = pendentes > 0 
                 ? 'w-3.5 h-3.5 rounded-full bg-red-600 shadow-[0_0_12px_red] status-dot' 
@@ -742,7 +678,7 @@
                 data: {
                     labels: ultimos.map(s => 'OM ' + s.om),
                     datasets: [{
-                        data: ultimos.map(s => Number(s.valor) || 0),
+                        data: ultimos.map(s => parseValor(s.valor)),
                         backgroundColor: 'rgba(255, 204, 0, 0.6)',
                         borderColor: '#ffcc00',
                         borderWidth: 1,
@@ -792,7 +728,22 @@
             }
         }
 
-        // CORREÇÃO PRINCIPAL: Importar com tratamento de dados robusto
+        // JSONP Helper
+        function fetchJsonp(url) {
+            return new Promise(function(resolve, reject) {
+                var callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+                window[callbackName] = function(data) {
+                    delete window[callbackName];
+                    document.body.removeChild(script);
+                    resolve(data);
+                };
+
+                var script = document.createElement('script');
+                script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+                document.body.appendChild(script);
+            });
+        }
+
         async function importFromCloud() {
             const tecnico = document.getElementById("usuario_nome").value.trim();
             const mes = document.getElementById("filtro_mes").value;
@@ -804,19 +755,16 @@
             
             try {
                 const url = `${GOOGLE_URL}?action=getBackup&usuario=${encodeURIComponent(tecnico)}&mes=${mes}`;
-                const response = await fetch(url);
-                const data = await response.json();
+                const data = await fetchJsonp(url);
                 
                 if(data.success && data.itens) {
-                    // Garantir que valores sejam números
                     const formatados = data.itens.map(i => ({
                         ...i,
-                        valor: parseFloat(i.valor) || 0,
-                        horas: parseFloat(i.horas) || 0,
+                        valor: parseValor(i.valor),
+                        horas: parseValor(i.horas),
                         sincronizado: true
                     }));
                     
-                    // Merge inteligente
                     formatados.forEach(novo => {
                         if(!inventoryData.some(local => String(local.id) === String(novo.id))) {
                             inventoryData.push(novo);
@@ -826,11 +774,10 @@
                     localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
                     loadInterface();
                     
-                    // Exibir resumo se existir
                     let msg = `Backup recuperado: ${formatados.length} registros.`;
                     if(data.resumo) {
-                        msg += `\n\nFaturamento do Período: R$ ${Number(data.resumo.faturamento).toFixed(2)}`;
-                        msg += `\nHoras: ${Number(data.resumo.horas).toFixed(1)}`;
+                        msg += `\n\nFaturamento: R$ ${parseValor(data.resumo.faturamento).toFixed(2)}`;
+                        msg += `\nHoras: ${parseValor(data.resumo.horas).toFixed(1)}`;
                     }
                     alert(msg);
                 } else {
@@ -838,7 +785,7 @@
                 }
             } catch(e) {
                 console.error("Erro import:", e);
-                alert("Erro ao baixar backup. Verifique a URL e conexao.");
+                alert("Erro ao baixar backup.");
             }
             hideLoader();
         }
@@ -855,8 +802,8 @@
             document.getElementById("f-maq").value = item.nome;
             document.getElementById("f-hrs").value = item.horas;
             document.getElementById("f-val").value = item.valor;
-            document.getElementById("f-abertura").value = item.abertura;
-            document.getElementById("f-entrega").value = item.entrega;
+            document.getElementById("f-abertura").value = item.abertura || "";
+            document.getElementById("f-entrega").value = item.entrega || "";
             document.getElementById("f-status").value = item.status;
             document.getElementById("f-indenizacao").checked = item.indenizacao;
             document.getElementById("f-ident").checked = item.identificado;
@@ -930,4 +877,4 @@
         }
     </script>
 </body>
-    </html>
+</html>
