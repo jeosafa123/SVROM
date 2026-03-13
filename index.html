@@ -1,159 +1,480 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>Vertical Locações - Oficina Smart v20.10</title>
+    <title>Vertical Locações - Oficina Smart v21.2</title>
     
-    <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#ffcc00">
-    <link rel="apple-touch-icon" href="icon-192.png"> 
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 
     <style>
-        /* --- ESTILO VERTICAL (GTA STYLE) --- */
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background: #000; overflow-x: hidden; font-family: 'Segoe UI', sans-serif; color: #e6eef6; }
-        #loading-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #000; z-index: 10000; transition: opacity 1s ease; display: flex; flex-direction: column; }
-        #bg-container { position: absolute; width: 100%; height: 100%; background-size: cover; background-position: center; background-image: url('https://images.unsplash.com/photo-1579412691525-46f34a06700c?q=80&w=1470&auto=format&fit=crop'); filter: brightness(0.4); animation: zoomEffect 15s infinite linear; }
-        @keyframes zoomEffect { from { transform: scale(1.0); } to { transform: scale(1.1); } }
-        .brand-container { position: absolute; top: 10%; left: 5%; color: white; text-shadow: 3px 3px 10px rgba(0,0,0,0.8); z-index: 11; }
-        .brand-name { font-size: 3.5rem; margin: 0; letter-spacing: 8px; font-weight: 900; border-left: 8px solid #ffcc00; padding-left: 20px; }
-        .brand-sub { font-size: 1.5rem; margin: 0; padding-left: 28px; font-weight: 300; letter-spacing: 5px; color: #ffcc00; }
-        .footer-loading { position: absolute; bottom: 50px; right: 50px; text-align: right; z-index: 11; }
-        .loading-bar-container { width: 300px; height: 4px; background: rgba(255, 255, 255, 0.1); border-radius: 2px; margin-top: 10px; overflow: hidden;}
-        #progress-bar-fill { width: 0%; height: 100%; background: #ffcc00; transition: width 0.3s; }
+        :root {
+            --primary: #ffcc00; 
+            --bg-body: #0a0a0a; 
+            --bg-card: #141414;
+            --border: rgba(255, 255, 255, 0.1); 
+            --text-main: #ffffff;
+        }
 
-        /* --- INTERFACE --- */
-        .app-content { padding: 15px; max-width: 1100px; margin: 0 auto; display: none; opacity: 0; transition: opacity 0.5s; }
-        .card { background:#14212d; padding:15px; border-radius:12px; margin-bottom:15px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        .tab-container { display: flex; border-bottom: 2px solid #2a3a4d; margin-bottom: 15px; gap: 5px; }
-        .tab-button { background: #14212d; color: #98a3b3; border: none; padding: 12px; cursor: pointer; border-radius: 8px 8px 0 0; font-weight: bold; flex: 1; }
-        .tab-button.active { background: #ffcc00; color: #000; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        label { display:block; margin-top:10px; color: #a0aec0; font-size: 14px; font-weight: 600; }
-        input, select { width:100%; padding:12px; border-radius:6px; border:1px solid #2a3a4d; background:#0d1a24; color:#fff; margin-top: 5px; font-size: 16px; box-sizing: border-box; }
-        .row { display:flex; gap:10px; flex-wrap: wrap; }
-        .row > * { flex:1; min-width: 120px; }
-        button { padding:12px; border:none; border-radius:8px; cursor:pointer; font-weight: bold; text-transform: uppercase; transition: 0.2s; }
-        .btn-main { background:#ffcc00; color: #000; width: 100%; margin-top: 15px; }
-        .btn-scan { background: #8b5cf6; color: white; margin-bottom: 15px; width: 100%; display: flex; align-items: center; justify-content: center; gap: 10px; border: 2px solid #a78bfa; height: 50px; }
+        body { 
+            background-color: var(--bg-body); 
+            color: var(--text-main); 
+            font-family: 'Inter', sans-serif; 
+            overflow: hidden;
+            background-image: linear-gradient(rgba(0,0,0,0.88), rgba(0,0,0,0.88)), url('https://images.unsplash.com/photo-1579412691525-46f34a06700c?q=80&w=1470&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }
+
+        .card-hardware { 
+            background: var(--bg-card); 
+            border: 1px solid var(--border); 
+            border-radius: 0.75rem; 
+            backdrop-filter: blur(10px); 
+            transition: all 0.3s ease;
+        }
         
-        table { width:100%; border-collapse:collapse; margin-top:10px; background: #0d1a24; font-size: 11px; }
-        th, td { padding:8px; border-bottom: 1px solid #2a3a4d; text-align: left; }
-        .stat-box { background:#0d1a24; padding:10px; border-radius:8px; text-align: center; border: 1px solid #2a3a4d; flex: 1; }
-        .stat-val { font-size: 1.1em; font-weight: bold; color: #ffcc00; }
-        .loader-global { display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index: 9999; flex-direction:column; align-items:center; justify-content:center; }
-        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .card-hardware:hover {
+            border-color: rgba(255, 204, 0, 0.2);
+        }
+        
+        .input-hardware { 
+            background: rgba(0,0,0,0.5); 
+            border: 1px solid var(--border); 
+            border-radius: 0.5rem; 
+            padding: 0.6rem; 
+            width: 100%; 
+            color: #fff; 
+            outline: none; 
+            font-size: 0.85rem;
+            transition: all 0.2s ease;
+        }
+        
+        .input-hardware:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px rgba(255, 204, 0, 0.15);
+        }
+        
+        .input-readonly { 
+            color: var(--primary); 
+            font-weight: 900; 
+            background: rgba(0,0,0,0.7); 
+        }
+        
+        .btn-primary { 
+            background: var(--primary); 
+            color: #000; 
+            font-weight: 800; 
+            text-transform: uppercase; 
+            padding: 0.7rem; 
+            border-radius: 0.5rem; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            gap: 0.4rem; 
+            font-size: 0.75rem; 
+            border: none; 
+            cursor: pointer; 
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 15px rgba(255, 204, 0, 0.3);
+        }
+        
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+        
+        .nav-bottom { 
+            background: rgba(10,10,10,0.98); 
+            border-top: 1px solid var(--border); 
+            position: fixed; 
+            bottom: 0; 
+            left: 0; 
+            right: 0; 
+            height: 65px; 
+            display: flex; 
+            z-index: 100; 
+        }
+        
+        .nav-item { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 0.65rem; 
+            font-weight: 800; 
+            color: #666; 
+            text-transform: uppercase; 
+            transition: all 0.2s ease;
+        }
+        
+        .nav-item:hover {
+            color: #999;
+        }
+        
+        .nav-item.active { 
+            color: var(--primary); 
+        }
+        
+        #loading-screen { 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: #000; 
+            z-index: 10000; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            transition: opacity 0.5s ease;
+        }
+        
+        .brand-name { 
+            font-size: 2.2rem; 
+            font-weight: 900; 
+            color: #fff; 
+            border-left: 6px solid var(--primary); 
+            padding-left: 15px; 
+            letter-spacing: 4px; 
+        }
+
+        #loader-global { 
+            display:none; 
+            position:fixed; 
+            top:0; 
+            left:0; 
+            width:100%; 
+            height:100%; 
+            background:rgba(0,0,0,0.95); 
+            z-index: 9999; 
+            flex-direction:column; 
+            align-items:center; 
+            justify-content:center; 
+        }
+        
+        .table-container { 
+            max-height: calc(100vh - 320px); 
+            overflow-y: auto; 
+        }
+        
+        .table-container::-webkit-scrollbar {
+            width: 4px;
+        }
+        
+        .table-container::-webkit-scrollbar-track {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .table-container::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 2px;
+        }
+        
+        tr.sincronizado { 
+            border-left: 4px solid #22c55e; 
+            background: rgba(34, 197, 94, 0.08); 
+        }
+        
+        tr.pendente {
+            border-left: 4px solid #ef4444;
+        }
+        
+        .status-dot {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .timer-display {
+            font-variant-numeric: tabular-nums;
+            text-shadow: 0 0 30px rgba(255, 204, 0, 0.4);
+        }
+        
+        .chart-container {
+            position: relative;
+        }
+        
+        select option {
+            background: #141414;
+            color: #fff;
+            padding: 10px;
+        }
     </style>
 </head>
-
-<body>
+<body class="h-screen w-screen flex flex-col">
 
     <div id="loading-screen">
-        <div id="bg-container"></div>
-        <div class="brand-container">
-            <h1 class="brand-name">VERTICAL</h1>
-            <h2 class="brand-sub">LOCAÇÕES</h2>
-        </div>
-        <div class="footer-loading">
-            <div class="loading-bar-container"><div id="progress-bar-fill"></div></div>
+        <div class="brand-name">VERTICAL</div>
+        <p class="text-[var(--primary)] text-[11px] font-bold tracking-[6px] mt-2">SISTEMAS</p>
+        <p class="text-gray-500 text-[9px] font-bold tracking-[3px] mt-1 uppercase">Oficina Smart v21.2</p>
+        <div class="w-40 h-1.5 bg-white/10 mt-8 rounded-full overflow-hidden">
+            <div id="progress-fill" class="h-full bg-[var(--primary)] transition-all duration-300" style="width: 0%"></div>
         </div>
     </div>
 
-    <div id="loader-global" class="loader-global">
-        <div style="border: 4px solid #f3f3f3; border-top: 4px solid #ffcc00; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
-        <p id="loader-text" style="color:white; margin-top:15px; font-weight:bold;">PROCESSANDO...</p>
+    <div id="loader-global">
+        <div class="animate-spin rounded-full h-10 w-10 border-t-4 border-[var(--primary)] border-r-transparent"></div>
+        <p id="loader-text" class="mt-4 text-[11px] font-black uppercase tracking-widest text-[var(--primary)]">Sincronizando...</p>
     </div>
 
-    <div class="app-content" id="main-app">
-        <h1 style="color:#ffcc00; border-bottom: 2px solid #ffcc00; padding-bottom: 10px; font-size: 18px;">OFICINA SMART v20.10</h1>
-
-        <div class="card">
-            <label>Técnico Responsável</label>
-            <input id="usuario_nome" type="text" placeholder="Seu nome completo" oninput="salvarNomeTecnico()">
+    <header class="p-5 flex justify-between items-center">
+        <div>
+            <h1 class="text-[var(--primary)] font-black text-2xl tracking-tighter">VERTICAL</h1>
+            <p class="text-gray-400 text-[8px] font-bold uppercase tracking-widest">Manutencao & Logistica</p>
         </div>
-
-        <div class="tab-container">
-            <button id="tab-btn-entrada" class="tab-button active" onclick="openTab('tab-entrada', this)">📝 Lançamento</button>
-            <button id="tab-btn-inventario" class="tab-button" onclick="openTab('tab-inventario', this)">📋 Lista & Nuvem</button>
+        <div class="flex items-center gap-3">
+            <div id="status-sync" class="w-3.5 h-3.5 rounded-full bg-red-600 shadow-[0_0_12px_red] status-dot" title="Status de sincronizacao"></div>
+            <button onclick="showSyncStatus()" class="text-gray-500 hover:text-[var(--primary)] transition-colors">
+                <i data-lucide="info" class="w-4 h-4"></i>
+            </button>
         </div>
+    </header>
 
-        <div id="tab-entrada" class="tab-content active">
-            <div class="card">
-                <h3 id="form-title" style="margin-top:0; color:#ffcc00; font-size: 14px;">NOVO SERVIÇO</h3>
-                <input type="hidden" id="edit-id">
-                
-                <label id="label-scan" class="btn-scan">📷 ESCANEAR OM (OCR)<input type="file" accept="image/*" capture="camera" hidden onchange="processarOCR(event)"></label>
-                
-                <div class="row">
-                    <div><label>OM Nº</label><input id="om" type="text"></div>
-                    <div><label>Patrimônio</label><input id="patrimonio" type="text"></div>
+    <main class="flex-1 overflow-y-auto px-4 pb-24">
+        
+        <!-- DASHBOARD -->
+        <section id="s-dashboard" class="space-y-4">
+            <div class="grid grid-cols-3 gap-3">
+                <div class="card-hardware p-3 border-b-2 border-b-[var(--primary)]">
+                    <p class="text-[7px] font-black text-gray-500 uppercase">Ordens</p>
+                    <h2 id="d-total" class="text-xl font-black">0</h2>
                 </div>
-                
-                <label>Equipamento</label>
-                <select id="nome" onchange="autoPreencher()"><option value="">Selecione...</option></select>
-
-                <div class="row">
-                    <div><label>Horas (Tempo)</label><input id="horas" type="number" readonly style="color:#ffcc00; background:#0a121a;"></div>
-                    <div><label>Vlr Unit. (R$)</label><input id="valor" type="number" step="0.01"></div>
+                <div class="card-hardware p-3 border-b-2 border-b-green-500">
+                    <p class="text-[7px] font-black text-gray-500 uppercase">Faturado</p>
+                    <!-- CORREÇÃO: Exibindo valor formatado com 2 casas decimais -->
+                    <h2 id="d-valor" class="text-xl font-black text-green-500">R$ 0,00</h2>
                 </div>
-                
-                <button id="btn-salvar" class="btn-main" onclick="addItem()">SALVAR NO CELULAR</button>
-                <button id="btn-cancelar-edit" class="btn-main" style="background:#444; color:#fff; display:none;" onclick="resetForm()">CANCELAR EDIÇÃO</button>
+                <div class="card-hardware p-3 border-b-2 border-b-blue-500">
+                    <p class="text-[7px] font-black text-gray-500 uppercase">Horas</p>
+                    <h2 id="d-horas" class="text-xl font-black">0.0</h2>
+                </div>
             </div>
-        </div>
-
-        <div id="tab-inventario" class="tab-content">
             
-            <div class="card" style="border: 1px solid #8b5cf6; background: #1a162d;">
-                <label style="color:#a78bfa; margin-top:0;">🔄 RESTAURAR DA NUVEM</label>
-                <div class="row">
-                    <input type="month" id="filtro_mes">
-                    <button onclick="importFromCloud()" style="background:#8b5cf6; color:white;">BAIXAR</button>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="card-hardware p-3">
+                    <p class="text-[7px] font-black text-gray-500 uppercase mb-1">Pendentes</p>
+                    <h3 id="d-pendentes" class="text-lg font-black text-red-500">0</h3>
+                </div>
+                <div class="card-hardware p-3">
+                    <p class="text-[7px] font-black text-gray-500 uppercase mb-1">Sincronizados</p>
+                    <h3 id="d-sincronizados" class="text-lg font-black text-green-500">0</h3>
+                </div>
+            </div>
+            
+            <div class="card-hardware p-4 chart-container">
+                <p class="text-[8px] font-black text-gray-500 uppercase mb-3">Ultimos Servicos (Valor R$)</p>
+                <canvas id="mainChart" height="130"></canvas>
+            </div>
+            
+            <div class="card-hardware p-4">
+                <p class="text-[8px] font-black text-gray-500 uppercase mb-3">Acesso Rapido</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="nav('lancamento')" class="btn-primary bg-green-700 text-white text-[10px] py-2">
+                        <i data-lucide="plus" class="w-3 h-3"></i> Nova OM
+                    </button>
+                    <button onclick="nav('lista')" class="btn-primary bg-indigo-700 text-white text-[10px] py-2">
+                        <i data-lucide="list" class="w-3 h-3"></i> Ver Lista
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- LANCAMENTO -->
+        <section id="s-lancamento" class="hidden space-y-4">
+            <div class="card-hardware p-5 flex flex-col items-center gap-4">
+                <div id="timer" class="text-5xl font-black font-mono text-[var(--primary)] tracking-widest timer-display">00:00:00</div>
+                <button id="btn-timer" onclick="toggleTimer()" class="btn-primary w-full bg-green-600 text-white text-sm">
+                    <i data-lucide="play-circle" class="w-4 h-4"></i> Iniciar Cronometro
+                </button>
+            </div>
+
+            <div class="card-hardware p-4 space-y-4">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="text-[8px] font-black text-gray-500 uppercase mb-1 block">Data Inicio</label>
+                        <input type="text" id="f-abertura" class="input-hardware" readonly placeholder="Automatico">
+                    </div>
+                    <div>
+                        <label class="text-[8px] font-black text-gray-500 uppercase mb-1 block">Data Termino</label>
+                        <input type="text" id="f-entrega" class="input-hardware" readonly placeholder="Automatico">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <input type="text" id="f-om" class="input-hardware" placeholder="Numero da OM *" maxlength="20">
+                    <input type="text" id="f-pat" class="input-hardware" placeholder="Patrimonio" maxlength="15">
+                </div>
+                
+                <select id="f-maq" class="input-hardware font-bold" onchange="autoPreencher()">
+                    <option value="">Selecione a Maquina...</option>
+                </select>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <div class="relative">
+                        <span class="absolute left-2 top-1 text-[7px] text-gray-500 font-bold uppercase">Mao de Obra (h)</span>
+                        <input type="number" id="f-hrs" class="input-hardware pt-4 input-readonly" readonly step="0.01">
+                    </div>
+                    <div class="relative">
+                        <span class="absolute left-2 top-1 text-[7px] text-gray-500 font-bold uppercase">Valor Cobrado</span>
+                        <input type="number" id="f-val" class="input-hardware pt-4" step="0.01" min="0">
+                    </div>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-3">
+                    <select id="f-status" class="input-hardware font-bold" onchange="checkIndenizacao()">
+                        <option value="Liberado">Liberado</option>
+                        <option value="Aguardando Pecas">Aguardando Pecas</option>
+                    </select>
+                    <div id="box-indenizacao" class="flex items-center gap-2 border border-white/5 p-2 rounded opacity-30 transition-all">
+                        <input type="checkbox" id="f-indenizacao" class="w-4 h-4 accent-red-600">
+                        <label for="f-indenizacao" class="text-[9px] font-black text-red-500 uppercase cursor-pointer">Indenizacao</label>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-3 p-3 bg-white/5 rounded border border-white/10">
+                    <input type="checkbox" id="f-ident" onchange="autoPreencher()" class="w-5 h-5 accent-[var(--primary)]">
+                    <label for="f-ident" class="text-[10px] font-black uppercase cursor-pointer">Adicional Identificacao (+50%)</label>
+                </div>
+                
+                <div class="flex gap-3 pt-2">
+                    <label class="btn-primary bg-indigo-700 text-white flex-1 cursor-pointer">
+                        <i data-lucide="camera" class="w-4 h-4"></i> OCR
+                        <input type="file" hidden accept="image/*" capture="environment" onchange="processarOCR(event)">
+                    </label>
+                    <button id="btn-salvar" onclick="saveItem()" class="btn-primary flex-[2]">
+                        <i data-lucide="check-circle" class="w-4 h-4"></i> Salvar Registro
+                    </button>
+                    <input type="hidden" id="edit-id">
+                </div>
+            </div>
+        </section>
+
+        <!-- LISTA -->
+        <section id="s-lista" class="hidden space-y-4">
+            <div class="card-hardware p-4 space-y-3">
+                <input type="text" id="search-om" oninput="loadInterface()" class="input-hardware border-[var(--primary)]/30" placeholder="Buscar por OM ou Patrimonio...">
+                <div class="flex gap-2">
+                    <input type="month" id="filtro_mes" class="input-hardware text-[11px] flex-1">
+                    <button onclick="importFromCloud()" class="btn-primary bg-blue-800 text-white w-12" title="Baixar Backup">
+                        <i data-lucide="cloud-download"></i>
+                    </button>
+                    <button onclick="syncSelected()" class="btn-primary flex-1">
+                        <i data-lucide="upload-cloud"></i> Sincronizar
+                    </button>
+                </div>
+                <div class="flex items-center justify-between text-[9px]">
+                    <span class="text-gray-500">Selecionados: <span id="count-selected" class="text-[var(--primary)] font-black">0</span></span>
+                    <button onclick="toggleAllVisible()" class="text-[var(--primary)] font-bold uppercase hover:underline">Selecionar Todos</button>
                 </div>
             </div>
 
-            <div class="card">
-                <div class="row" style="margin-bottom:15px;">
-                    <div class="stat-box"><div>ITENS</div><div id="totalItens" class="stat-val">0</div></div>
-                    <div class="stat-box"><div>TOTAL HORAS</div><div id="totalHoras" class="stat-val">0.0</div></div>
-                    <div class="stat-box"><div>TOTAL R$</div><div id="totalValor" class="stat-val">0,00</div></div>
-                </div>
-                
-                <div class="row" style="margin-bottom:10px;">
-                    <button onclick="generatePDF()" style="background:#2563eb; color:white;">PDF</button>
-                    <button onclick="syncSelected()" style="background:#ffcc00; color:#000; flex:2;">☁️ SINCRONIZAR NOVOS</button>
-                </div>
-
-                <div style="overflow-x: auto;">
-                    <table>
-                        <thead>
+            <div class="card-hardware overflow-hidden">
+                <div class="table-container">
+                    <table class="w-full text-left text-[11px]">
+                        <thead class="bg-white/10 text-[var(--primary)] font-black uppercase text-[8px] tracking-widest sticky top-0">
                             <tr>
-                                <th><input type="checkbox" onclick="toggleAll(this)"></th>
-                                <th>OM</th>
-                                <th>Patrimônio</th>
-                                <th>Equip.</th>
-                                <th>Ações</th>
+                                <th class="p-3 w-8">
+                                    <input type="checkbox" id="check-all" onclick="toggleAll(this)">
+                                </th>
+                                <th class="p-3">Servico (OM / MAQ / PAT)</th>
+                                <th class="p-3 text-right">Financeiro</th>
+                                <th class="p-3 w-8 text-center">Acoes</th>
                             </tr>
                         </thead>
-                        <tbody id="lista"></tbody>
+                        <tbody id="t-body" class="divide-y divide-white/5"></tbody>
                     </table>
                 </div>
-                <button onclick="clearAll()" style="background:#dc2626; color:white; width:100%; margin-top:20px; font-size:10px;">LIMPAR MEMÓRIA LOCAL</button>
             </div>
-        </div>
-    </div>
+            
+            <div class="flex gap-2">
+                <button onclick="exportXLSX()" class="btn-primary flex-1 bg-green-900 text-white">
+                    <i data-lucide="file-spreadsheet" class="w-4 h-4"></i> Excel
+                </button>
+                <button onclick="generatePDF()" class="btn-primary flex-1 bg-red-900 text-white">
+                    <i data-lucide="file-text" class="w-4 h-4"></i> PDF
+                </button>
+            </div>
+        </section>
+
+        <!-- EQUIPE/AJUSTES -->
+        <section id="s-equipe" class="hidden space-y-4">
+            <div class="card-hardware p-6">
+                <div class="flex flex-col items-center gap-4 mb-6">
+                    <div class="w-20 h-20 bg-[var(--primary)] rounded-full flex items-center justify-center">
+                        <i data-lucide="user" class="w-10 h-10 text-black"></i>
+                    </div>
+                    <h3 class="text-[var(--primary)] font-black uppercase tracking-widest text-sm">Perfil do Tecnico</h3>
+                </div>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="text-[8px] font-black text-gray-500 uppercase mb-1 block">Nome Completo</label>
+                        <input type="text" id="usuario_nome" class="input-hardware text-center text-lg font-black" placeholder="NOME COMPLETO" maxlength="50" oninput="salvarNomeTecnico()">
+                    </div>
+                    <button onclick="salvarPerfil()" class="btn-primary w-full">
+                        <i data-lucide="save" class="w-4 h-4"></i> Salvar Dados
+                    </button>
+                </div>
+            </div>
+            
+            <div class="card-hardware p-4">
+                <h4 class="text-[8px] font-black text-gray-500 uppercase mb-3">Dados do Sistema</h4>
+                <div class="grid grid-cols-2 gap-3 text-center">
+                    <div class="bg-white/5 p-3 rounded">
+                        <p class="text-[7px] text-gray-500 uppercase">Registros Locais</p>
+                        <p id="stat-locais" class="text-lg font-black text-[var(--primary)]">0</p>
+                    </div>
+                    <div class="bg-white/5 p-3 rounded">
+                        <p class="text-[7px] text-gray-500 uppercase">Versao</p>
+                        <p class="text-lg font-black text-gray-400">21.2</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="text-center pt-4">
+                <button onclick="clearAll()" class="text-red-600 font-black text-[10px] uppercase opacity-50 hover:opacity-100 transition-all px-4 py-2 border border-red-900/30 rounded hover:border-red-600">
+                    <i data-lucide="trash-2" class="w-3 h-3 inline mr-1"></i> Limpar Banco de Dados Local
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <nav class="nav-bottom">
+        <button onclick="nav('dashboard')" id="n-dashboard" class="nav-item active">
+            <i data-lucide="bar-chart-3" class="w-6 h-6 mb-1"></i>Dash
+        </button>
+        <button onclick="nav('lancamento')" id="n-lancamento" class="nav-item">
+            <i data-lucide="plus-square" class="w-6 h-6 mb-1"></i>Lancar
+        </button>
+        <button onclick="nav('lista')" id="n-lista" class="nav-item">
+            <i data-lucide="hard-drive" class="w-6 h-6 mb-1"></i>Lista
+        </button>
+        <button onclick="nav('equipe')" id="n-equipe" class="nav-item">
+            <i data-lucide="user-cog" class="w-6 h-6 mb-1"></i>Ajustes
+        </button>
+    </nav>
 
     <script>
-        // --- CONFIGURAÇÕES ---
-        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwLyqim33McWCBNZ4Pc5LQJygGcR0ZGMtKCvUO3xB5haixT_fU2d_3-h8h-bZL_5u5A/exec"; // << COLOQUE SEU LINK DO APPS SCRIPT AQUI
+        // ==================== CONFIGURACOES ====================
+        // COLOQUE SUA URL DO GOOGLE APPS SCRIPT ABAIXO
+        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwLyqim33McWCBNZ4Pc5LQJygGcR0ZGMtKCvUO3xB5haixT_fU2d_3-h8h-bZL_5u5A/exec"; 
         const TOKEN = "OFICINA-SEGURA-123";
-
-        // --- LISTA ATUALIZADA (34 ITENS) ---
+        
         const tabelaPrecos = [
             { nome: "ACABADORA DE SUPERF", valor: 2.00, horas: 5.0 },
             { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
@@ -166,388 +487,447 @@
             { nome: "COMPACTADOR", valor: 3.00, horas: 4.0 },
             { nome: "CORTADORA", valor: 3.00, horas: 4.0 },
             { nome: "GERADOR", valor: 3.00, horas: 3.2 },
-            { nome: "GUINCHO DE ELEVAÇÃO", valor: 10.00, horas: 6.0 },
-            { nome: "MARTELO 2 KG - 220V", valor: 1.50, horas: 2.0 },
-            { nome: "MARTELO 5,7 KG-220V", valor: 1.50, horas: 2.0 },
-            { nome: "MARTELO 6 KG - 220V", valor: 1.70, horas: 2.0 },
-            { nome: "MARTELO 11 KG - ROT", valor: 2.00, horas: 2.2 },
-            { nome: "MARTELO 11 KG - 220V", valor: 1.70, horas: 2.2 },
-            { nome: "MARTELO 16/19 KG", valor: 2.00, horas: 2.3 },
-            { nome: "MARTELO 19 KG - 220V", valor: 2.00, horas: 2.5 },
-            { nome: "MARTELO 30 KG - 220V", valor: 2.00, horas: 2.5 },
-            { nome: "MINI GRUA", valor: 10.00, horas: 6.0 },
+            { nome: "GUINCHO DE ELEVACAO", valor: 10.00, horas: 6.0 },
+            { nome: "MARTELO 2 KG", valor: 1.50, horas: 2.0 },
+            { nome: "MARTELO 6 KG", valor: 1.70, horas: 2.0 },
+            { nome: "MARTELO 11 KG", valor: 1.70, horas: 2.2 },
+            { nome: "MARTELO 19 KG", valor: 2.00, horas: 2.5 },
+            { nome: "MARTELO 30 KG", valor: 2.00, horas: 2.5 },
             { nome: "MOTOR - ACIONADOR", valor: 3.00, horas: 3.0 },
-            { nome: "MOTOR - ELET_TRIFA", valor: 3.00, horas: 3.0 },
             { nome: "PLACA VIBRATORIA", valor: 3.50, horas: 4.5 },
-            { nome: "REGUA VIBRATORIA", valor: 5.00, horas: 4.5 },
-            { nome: "TORRE DE ILUMINACAO", valor: 25.00, horas: 6.0 },
-            { nome: "MINI TORRE DE ILUMINACAO", valor: 2.00, horas: 2.0 },
-            { nome: "UNIDADES HIDRAULICA", valor: 8.00, horas: 16.0 },
-            { nome: "VIBRADOR DE IMERSAO", valor: 2.80, horas: 4.0 },
+            { nome: "VIBRADOR IMERSAO", valor: 2.80, horas: 4.0 },
             { nome: "ROLO COMPACTADOR", valor: 20.00, horas: 24.0 },
-            { nome: "MINI CARREGADEIRA", valor: 34.00, horas: 16.0 },
-            { nome: "MINI ESCAVADEIRA", valor: 34.00, horas: 16.0 },
-            { nome: "VELOX", valor: 8.00, horas: 6.0 },
-            { nome: "PERFURATRIZ", valor: 25.00, horas: 6.0 },
             { nome: "MAQUINA PESADA", valor: 34.00, horas: 16.0 }
         ];
 
-        let inventoryData = JSON.parse(localStorage.getItem("oficina_inventory")) || [];
+        let inventoryData = [];
+        let timer = { active: false, sec: 0, interval: null };
+        let chartInstance = null;
 
-        // --- INICIALIZAÇÃO ---
-        window.onload = () => {
-            const salvo = localStorage.getItem("tecnico_atual");
-            if(salvo) document.getElementById("usuario_nome").value = salvo;
+        // ==================== INICIALIZACAO ====================
+        window.onload = function() {
+            // Animacao de loading
+            const fill = document.getElementById('progress-fill');
+            let progress = 0;
             
-            const sel = document.getElementById("nome");
-            tabelaPrecos.forEach(i => sel.innerHTML += `<option value="${i.nome}">${i.nome}</option>`);
+            const loadingInterval = setInterval(function() {
+                progress += 15;
+                fill.style.width = Math.min(progress, 100) + "%";
+                
+                if(progress >= 100) {
+                    clearInterval(loadingInterval);
+                    setTimeout(function() {
+                        const loadingScreen = document.getElementById('loading-screen');
+                        loadingScreen.style.opacity = '0';
+                        setTimeout(function() {
+                            loadingScreen.style.display = 'none';
+                        }, 500);
+                    }, 200);
+                }
+            }, 120);
+
+            // Carregar dados
+            try {
+                const savedData = localStorage.getItem("oficina_inventory");
+                if(savedData) {
+                    inventoryData = JSON.parse(savedData);
+                }
+            } catch(e) {
+                console.error("Erro ao carregar dados:", e);
+                inventoryData = [];
+            }
+
+            // Preencher select de maquinas
+            const selectMaq = document.getElementById("f-maq");
+            tabelaPrecos.forEach(function(item) {
+                const option = document.createElement("option");
+                option.value = item.nome;
+                option.textContent = item.nome;
+                selectMaq.appendChild(option);
+            });
+
+            // Carregar nome do tecnico
+            const nomeSalvo = localStorage.getItem("tecnico_atual");
+            if(nomeSalvo) {
+                document.getElementById("usuario_nome").value = nomeSalvo;
+            }
+
+            // Definir mes atual no filtro
+            const hoje = new Date();
+            const mesAtual = hoje.getFullYear() + '-' + String(hoje.getMonth() + 1).padStart(2, '0');
+            document.getElementById("filtro_mes").value = mesAtual;
+
+            // Inicializar icones
+            lucide.createIcons();
             
-            load();
-            startLoading();
+            // Carregar interface
+            loadInterface();
         };
 
-        // --- REGISTRO DO SERVICE WORKER (PWA) ---
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./service_worker.js')
-                    .then(reg => console.log('SW registrado:', reg.scope))
-                    .catch(err => console.log('Falha no SW:', err));
-            });
+        // ==================== NAVEGACAO ====================
+        function nav(id) {
+            document.querySelectorAll('section').forEach(function(s) { s.classList.add('hidden'); });
+            document.querySelectorAll('.nav-item').forEach(function(i) { i.classList.remove('active'); });
+            
+            document.getElementById('s-' + id).classList.remove('hidden');
+            document.getElementById('n-' + id).classList.add('active');
+            
+            loadInterface();
         }
 
-        // --- SISTEMA DE LOADING ---
-        function startLoading() {
-            let p = 0;
-            const fill = document.getElementById('progress-bar-fill');
-            const interval = setInterval(() => {
-                p += 20;
-                if(fill) fill.style.width = p + "%";
-                if(p >= 100) { clearInterval(interval); finishLoading(); }
-            }, 150);
-        }
-
-        function finishLoading() {
-            const screen = document.getElementById('loading-screen');
-            if(screen) {
-                screen.style.opacity = '0';
-                setTimeout(() => {
-                    screen.style.display = 'none';
-                    document.getElementById('main-app').style.display = 'block';
-                    setTimeout(() => document.getElementById('main-app').style.opacity = '1', 50);
-                }, 800);
+        // ==================== AUTO PREENCHIMENTO ====================
+        function autoPreencher() {
+            const equipamento = document.getElementById("f-maq").value;
+            if(!equipamento) return;
+            
+            const item = tabelaPrecos.find(function(x) { return x.nome === equipamento; });
+            
+            if(item) {
+                document.getElementById("f-hrs").value = item.horas.toFixed(2);
+                let valor = item.valor;
+                if(document.getElementById('f-ident').checked) valor *= 1.5;
+                document.getElementById("f-val").value = valor.toFixed(2);
             }
         }
 
-        // --- LISTAGEM E TOTAIS ---
-        function load() {
-            const lista = document.getElementById("lista");
-            lista.innerHTML = "";
-            let v = 0;
-            let h = 0; // Total de Horas
-
-            inventoryData.forEach(i => {
-                v += i.valor;
-                h += Number(i.horas) || 0; // Soma horas convertendo para número
-                
-                lista.innerHTML += `<tr>
-                    <td><input type="checkbox" class="sync-check" data-id="${i.id}" ${i.sincronizado ? 'disabled' : ''}></td>
-                    <td>${i.om}</td>
-                    <td style="color:#ffcc00; font-weight:bold;">${i.patrimonio || '---'}</td>
-                    <td>${i.nome}</td>
-                    <td class="action-btns">
-                        <button onclick="editItem(${i.id})" style="background:#2b9cff; color:white; padding:4px;">✎</button>
-                    </td>
-                </tr>`;
-            });
-
-            document.getElementById("totalItens").innerText = inventoryData.length;
-            document.getElementById("totalHoras").innerText = h.toFixed(1); // Exibe com 1 casa decimal
-            document.getElementById("totalValor").innerText = v.toLocaleString('pt-BR', {minimumFractionDigits:2});
-        }
-
-        // --- FUNÇÃO DE RESTAURAR (BACKUP DA NUVEM) ---
-        async function importFromCloud() {
-            const tecnico = document.getElementById("usuario_nome").value;
-            const mesFiltro = document.getElementById("filtro_mes").value;
-            if (!tecnico || !mesFiltro) return alert("Preencha Técnico e Mês!");
+        // ==================== CRONOMETRO ====================
+        function toggleTimer() {
+            const btn = document.getElementById('btn-timer');
             
-            showLoader("BUSCANDO NA NUVEM...");
-            
-            // Timeout de segurança (15 segundos)
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 15000);
-
-            try {
-                const response = await fetch(`${GOOGLE_URL}?action=getBackup&usuario=${encodeURIComponent(tecnico)}&mes=${mesFiltro}`, { signal: controller.signal });
-                const resultado = await response.json();
-                clearTimeout(timeoutId);
-                
-                if (resultado.itens && resultado.itens.length > 0) {
-                    // Filtra para não duplicar o que já está no celular
-                    const novosItens = resultado.itens.filter(n => !inventoryData.some(l => l.id == n.id));
-                    
-                    if (novosItens.length === 0) { 
-                        alert("Todos os dados desse mês já estão no celular."); 
-                    } else {
-                        inventoryData = [...novosItens, ...inventoryData];
-                        localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-                        load();
-                        alert(`${novosItens.length} itens recuperados com sucesso!`);
-                    }
-                } else { 
-                    alert("Nenhum dado encontrado para este mês na nuvem."); 
-                }
-            } catch (e) { 
-                if (e.name === 'AbortError') alert("A conexão demorou muito. Verifique sua internet.");
-                else alert("Erro de conexão. Verifique se a Planilha está implantada."); 
+            if(!timer.active) {
+                timer.active = true;
+                timer.sec = 0;
+                btn.innerHTML = '<i data-lucide="square" class="w-4 h-4"></i> Finalizar Trabalho';
+                btn.classList.remove('bg-green-600'); btn.classList.add('bg-red-600');
+                document.getElementById('f-abertura').value = new Date().toLocaleString('pt-BR');
+                document.getElementById('f-entrega').value = "";
+                timer.interval = setInterval(function() { timer.sec++; updateTimerDisplay(); }, 1000);
+            } else {
+                timer.active = false;
+                clearInterval(timer.interval);
+                btn.innerHTML = '<i data-lucide="play-circle" class="w-4 h-4"></i> Iniciar Cronometro';
+                btn.classList.remove('bg-red-600'); btn.classList.add('bg-green-600');
+                document.getElementById('f-entrega').value = new Date().toLocaleString('pt-BR');
+                document.getElementById('f-hrs').value = (timer.sec / 3600).toFixed(2);
+                autoPreencher();
             }
-            hideLoader();
+            lucide.createIcons();
         }
 
-        // --- CRUD E SINCRONIZAÇÃO ---
-        function addItem() {
+        function updateTimerDisplay() {
+            const h = String(Math.floor(timer.sec / 3600)).padStart(2, '0');
+            const m = String(Math.floor((timer.sec % 3600) / 60)).padStart(2, '0');
+            const s = String(timer.sec % 60).padStart(2, '0');
+            document.getElementById('timer').innerText = `${h}:${m}:${s}`;
+        }
+
+        // ==================== SALVAR ITEM ====================
+        function saveItem() {
+            const tecnico = document.getElementById("usuario_nome").value.trim();
+            if(!tecnico) { alert("Configure seu nome na aba Ajustes!"); nav('equipe'); return; }
+            
+            const om = document.getElementById("f-om").value.trim();
+            const nome = document.getElementById("f-maq").value;
+            
+            if(!om) { alert("Numero da OM e obrigatorio!"); return; }
+            if(!nome) { alert("Selecione uma maquina!"); return; }
+
             const idEdit = document.getElementById("edit-id").value;
-            const tecnico = document.getElementById("usuario_nome").value;
-            if(!tecnico) return alert("Digite seu nome!");
-            
             const dados = {
-                om: document.getElementById("om").value,
-                patrimonio: document.getElementById("patrimonio").value,
-                nome: document.getElementById("nome").value,
-                horas: Number(document.getElementById("horas").value),
-                valor: Number(document.getElementById("valor").value)
+                om, 
+                patrimonio: document.getElementById("f-pat").value.trim() || 'S/N',
+                nome, 
+                horas: parseFloat(document.getElementById("f-hrs").value) || 0,
+                valor: parseFloat(document.getElementById("f-val").value) || 0,
+                abertura: document.getElementById("f-abertura").value,
+                entrega: document.getElementById("f-entrega").value,
+                status: document.getElementById("f-status").value,
+                indenizacao: document.getElementById("f-indenizacao").checked,
+                identificado: document.getElementById("f-ident").checked
             };
-            
-            if(!dados.om || !dados.nome) return alert("OM e Equipamento obrigatórios!");
-            
+
             if(idEdit) {
-                const idx = inventoryData.findIndex(i => i.id == idEdit);
-                inventoryData[idx] = { ...inventoryData[idx], ...dados };
+                const idx = inventoryData.findIndex(function(i) { return i.id == idEdit; });
+                if(idx !== -1) inventoryData[idx] = { ...inventoryData[idx], ...dados, sincronizado: false };
             } else {
                 inventoryData.unshift({ id: Date.now(), data: new Date().toLocaleDateString('pt-BR'), tecnico, ...dados, sincronizado: false });
             }
             
             localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-            resetForm(); load();
+            resetForm(); nav('dashboard'); alert("Registro salvo!");
         }
 
-        function editItem(id) {
-            const item = inventoryData.find(i => i.id == id);
-            if(item.sincronizado) return alert("Item sincronizado não pode ser editado para segurança.");
+        // ==================== CARREGAR INTERFACE ====================
+        function loadInterface() {
+            const tbody = document.getElementById('t-body');
+            const query = document.getElementById('search-om').value.toLowerCase().trim();
             
-            document.getElementById("edit-id").value = item.id;
-            document.getElementById("om").value = item.om;
-            document.getElementById("patrimonio").value = item.patrimonio;
-            document.getElementById("nome").value = item.nome;
-            document.getElementById("horas").value = item.horas;
-            document.getElementById("valor").value = item.valor;
-            
-            document.getElementById("form-title").innerText = "EDITANDO SERVIÇO";
-            document.getElementById("btn-salvar").innerText = "ATUALIZAR";
-            document.getElementById("btn-cancelar-edit").style.display = "block";
-            openTab('tab-entrada', document.getElementById('tab-btn-entrada'));
-        }
-
-        async function syncSelected() {
-            const selectedIds = Array.from(document.querySelectorAll('.sync-check:checked')).map(cb => Number(cb.dataset.id));
-            if(selectedIds.length === 0) return alert("Selecione itens para sincronizar!");
-            
-            showLoader("SINCRONIZANDO...");
-            try {
-                const itensParaEnviar = inventoryData.filter(i => selectedIds.includes(i.id));
-                await fetch(GOOGLE_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ token: TOKEN, itens: itensParaEnviar }) });
-                
-                inventoryData.forEach(i => { if(selectedIds.includes(i.id)) i.sincronizado = true; });
-                localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-                
-                load(); alert("Sincronizado com sucesso!");
-            } catch(e) { alert("Erro ao conectar com a planilha."); }
-            hideLoader();
-        }
-
-        // --- UTILITÁRIOS ---
-        function autoPreencher() {
-            const it = tabelaPrecos.find(x => x.nome === document.getElementById("nome").value);
-            if(it) { document.getElementById("horas").value = it.horas; document.getElementById("valor").value = it.valor.toFixed(2); }
-        }
-        
-        /* ==========================================================
-           🔹 OCR SMART – IMPLEMENTADO (ATUALIZADO)
-           ========================================================== */
-        
-        async function processarOCR(event) {
-            const arquivo = event.target.files[0];
-            if (!arquivo) return;
-
-            showLoader("LENDO ORDEM DE MANUTENÇÃO...");
-
-            try {
-                const worker = await Tesseract.createWorker();
-                await worker.loadLanguage("por");
-                await worker.initialize("por");
-
-                // 🔥 Pré-processamento aplicado
-                const canvas = await preprocessarImagem(arquivo);
-                const { data: { text } } = await worker.recognize(canvas);
-
-                await worker.terminate();
-
-                const dados = mapearCamposOM(text);
-                const erros = [];
-
-                if (dados.om) {
-                    document.getElementById("om").value = dados.om;
-                } else {
-                    erros.push("OM não encontrada");
-                }
-
-                if (dados.patrimonio) {
-                    document.getElementById("patrimonio").value = dados.patrimonio;
-                } else {
-                    erros.push("Patrimônio não encontrado");
-                }
-
-                if (erros.length > 0) {
-                    logErroOCR({
-                        arquivo: arquivo.name || "camera",
-                        erros,
-                        textoOCR: text.substring(0, 500)
-                    });
-                }
-
-                console.log("OCR TEXTO:", text);
-
-            } catch (e) {
-                logErroOCR({
-                    arquivo: arquivo?.name || "camera",
-                    erros: ["Falha geral no OCR"],
-                    detalhe: e.message
+            let filtered = inventoryData;
+            if(query) {
+                filtered = inventoryData.filter(function(i) {
+                    return (i.om && i.om.toString().toLowerCase().includes(query)) ||
+                           (i.patrimonio && i.patrimonio.toString().toLowerCase().includes(query));
                 });
-                alert("Não foi possível ler a imagem.");
-                console.error(e);
             }
 
+            // Renderizar tabela
+            if(filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="p-10 text-center opacity-30 text-[9px] font-bold uppercase">Nenhum registro</td></tr>';
+            } else {
+                tbody.innerHTML = filtered.map(function(i) {
+                    const syncClass = i.sincronizado ? 'sincronizado' : 'pendente';
+                    const syncDisabled = i.sincronizado ? 'disabled' : '';
+                    const syncChecked = i.sincronizado ? 'checked' : '';
+                    const statusColor = i.status === 'Liberado' ? 'text-green-500' : 'text-orange-500';
+                    
+                    return `<tr class="${syncClass}">
+                        <td class="p-3"><input type="checkbox" class="sync-check" data-id="${i.id}" ${syncDisabled} ${syncChecked} onchange="updateSelectedCount()"></td>
+                        <td class="p-3">
+                            <div class="font-black text-[var(--primary)] text-[11px] uppercase">OM: ${i.om}</div>
+                            <div class="text-[9px] font-black text-gray-200 uppercase">${i.nome || '-'}</div>
+                            <div class="text-[8px] text-gray-500">Pat: ${i.patrimonio || 'S/N'}</div>
+                        </td>
+                        <td class="p-3 text-right">
+                            <div class="font-black text-xs">R$ ${(Number(i.valor) || 0).toFixed(2)}</div>
+                            <div class="text-[7px] font-black ${statusColor} uppercase">${i.status || '-'}</div>
+                        </td>
+                        <td class="p-3 text-center">
+                            <button onclick="editItem(${i.id})" class="text-gray-500 hover:text-[var(--primary)]"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                        </td>
+                    </tr>`;
+                }).join('');
+            }
+
+            // Calcular estatisticas
+            const totalRegistros = inventoryData.length;
+            const sincronizados = inventoryData.filter(i => i.sincronizado).length;
+            const pendentes = totalRegistros - sincronizados;
+            
+            // Faturamento: Apenas "Liberado" ou "Aguardando Peças com Indenização"
+            const validados = inventoryData.filter(function(i) { 
+                return i.status === "Liberado" || (i.status === "Aguardando Pecas" && i.indenizacao);
+            });
+            
+            const sumValor = validados.reduce((acc, item) => acc + (Number(item.valor) || 0), 0);
+            const sumHoras = inventoryData.reduce((acc, item) => acc + (Number(item.horas) || 0), 0);
+
+            // Atualizar Dashboard
+            document.getElementById('d-total').innerText = totalRegistros;
+            // CORREÇÃO: Formatar moeda corretamente
+            document.getElementById('d-valor').innerText = sumValor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            document.getElementById('d-horas').innerText = sumHoras.toFixed(1);
+            document.getElementById('d-pendentes').innerText = pendentes;
+            document.getElementById('d-sincronizados').innerText = sincronizados;
+            document.getElementById('stat-locais').innerText = totalRegistros;
+
+            // Status Sync
+            const statusEl = document.getElementById('status-sync');
+            statusEl.className = pendentes > 0 
+                ? 'w-3.5 h-3.5 rounded-full bg-red-600 shadow-[0_0_12px_red] status-dot' 
+                : 'w-3.5 h-3.5 rounded-full bg-green-500 shadow-[0_0_12px_green]';
+
+            updateSelectedCount();
+            updateChart(validados);
+            lucide.createIcons();
+        }
+
+        function updateChart(validados) {
+            const ctx = document.getElementById('mainChart').getContext('2d');
+            if(chartInstance) chartInstance.destroy();
+            
+            const ultimos = validados.slice(0, 8).reverse();
+            
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ultimos.map(s => 'OM ' + s.om),
+                    datasets: [{
+                        data: ultimos.map(s => Number(s.valor) || 0),
+                        backgroundColor: 'rgba(255, 204, 0, 0.6)',
+                        borderColor: '#ffcc00',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { color: '#666', font: { size: 8 } }, grid: { display: false } },
+                        y: { ticks: { color: '#666', font: { size: 8 } }, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+        }
+
+        function updateSelectedCount() {
+            const checked = document.querySelectorAll('.sync-check:checked:not([disabled])').length;
+            const countEl = document.getElementById('count-selected');
+            if(countEl) countEl.innerText = checked;
+        }
+
+        // ==================== SINCRONIZACAO ====================
+        async function syncSelected() {
+            const ids = Array.from(document.querySelectorAll('.sync-check:checked:not([disabled])')).map(cb => Number(cb.dataset.id));
+            if(ids.length === 0) { alert("Selecione os itens!"); return; }
+            
+            showLoader("Sincronizando...");
+            
+            try {
+                const itens = inventoryData.filter(i => ids.includes(i.id));
+                const payload = JSON.stringify({ token: TOKEN, itens: itens });
+                
+                await fetch(GOOGLE_URL, { method: "POST", mode: "no-cors", body: payload });
+                
+                inventoryData.forEach(function(i) {
+                    if(ids.includes(i.id)) i.sincronizado = true;
+                });
+                
+                localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
+                hideLoader(); loadInterface();
+                alert("Sincronizacao concluida!");
+                
+            } catch(e) {
+                hideLoader();
+                alert("Erro de conexao.");
+            }
+        }
+
+        // CORREÇÃO PRINCIPAL: Importar com tratamento de dados robusto
+        async function importFromCloud() {
+            const tecnico = document.getElementById("usuario_nome").value.trim();
+            const mes = document.getElementById("filtro_mes").value;
+            
+            if(!tecnico) { alert("Configure seu nome!"); nav('equipe'); return; }
+            if(!mes) { alert("Selecione o mes!"); return; }
+            
+            showLoader("Baixando Registros...");
+            
+            try {
+                const url = `${GOOGLE_URL}?action=getBackup&usuario=${encodeURIComponent(tecnico)}&mes=${mes}`;
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if(data.success && data.itens) {
+                    // Garantir que valores sejam números
+                    const formatados = data.itens.map(i => ({
+                        ...i,
+                        valor: parseFloat(i.valor) || 0,
+                        horas: parseFloat(i.horas) || 0,
+                        sincronizado: true
+                    }));
+                    
+                    // Merge inteligente
+                    formatados.forEach(novo => {
+                        if(!inventoryData.some(local => String(local.id) === String(novo.id))) {
+                            inventoryData.push(novo);
+                        }
+                    });
+                    
+                    localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
+                    loadInterface();
+                    
+                    // Exibir resumo se existir
+                    let msg = `Backup recuperado: ${formatados.length} registros.`;
+                    if(data.resumo) {
+                        msg += `\n\nFaturamento do Período: R$ ${Number(data.resumo.faturamento).toFixed(2)}`;
+                        msg += `\nHoras: ${Number(data.resumo.horas).toFixed(1)}`;
+                    }
+                    alert(msg);
+                } else {
+                    alert(data.message || "Nenhum registro encontrado.");
+                }
+            } catch(e) {
+                console.error("Erro import:", e);
+                alert("Erro ao baixar backup. Verifique a URL e conexao.");
+            }
             hideLoader();
         }
 
-        /* --- FUNÇÕES AUXILIARES DO OCR SMART --- */
-
-        async function preprocessarImagem(file) {
-            return new Promise((resolve) => {
-                const img = new Image();
-                const reader = new FileReader();
-
-                reader.onload = () => {
-                    img.onload = () => {
-                        const canvas = document.createElement("canvas");
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        const ctx = canvas.getContext("2d");
-
-                        ctx.drawImage(img, 0, 0);
-
-                        const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                        const data = imgData.data;
-
-                        for (let i = 0; i < data.length; i += 4) {
-                            const gray = data[i] * 0.3 + data[i + 1] * 0.59 + data[i + 2] * 0.11;
-                            const bw = gray > 150 ? 255 : 0;
-                            data[i] = data[i + 1] = data[i + 2] = bw;
-                        }
-
-                        ctx.putImageData(imgData, 0, 0);
-                        resolve(canvas);
-                    };
-                    img.src = reader.result;
-                };
-
-                reader.readAsDataURL(file);
-            });
+        // ==================== EDITAR / UTILS ====================
+        function editItem(id) {
+            const item = inventoryData.find(i => i.id == id);
+            if(!item) return;
+            if(item.sincronizado) { alert("Registros sincronizados nao podem ser editados localmente."); return; }
+            
+            document.getElementById("edit-id").value = item.id;
+            document.getElementById("f-om").value = item.om;
+            document.getElementById("f-pat").value = item.patrimonio;
+            document.getElementById("f-maq").value = item.nome;
+            document.getElementById("f-hrs").value = item.horas;
+            document.getElementById("f-val").value = item.valor;
+            document.getElementById("f-abertura").value = item.abertura;
+            document.getElementById("f-entrega").value = item.entrega;
+            document.getElementById("f-status").value = item.status;
+            document.getElementById("f-indenizacao").checked = item.indenizacao;
+            document.getElementById("f-ident").checked = item.identificado;
+            checkIndenizacao();
+            nav('lancamento');
         }
 
-        function extrairCampo(regex, texto) {
-            const m = texto.match(regex);
-            return m ? m[1].trim() : "";
-        }
-
-        function mapearCamposOM(texto) {
-            return {
-                om: extrairCampo(/OM\s*N[º°]?\s*(\d+)/i, texto),
-                patrimonio: extrairCampo(/Patrim[oô]nio[:\s]*([A-Z0-9]+)/i, texto)
-            };
-        }
-
-        function logErroOCR(info) {
-            const logs = JSON.parse(localStorage.getItem("ocr_logs")) || [];
-
-            logs.unshift({
-                data: new Date().toLocaleString("pt-BR"),
-                ...info
-            });
-
-            if (logs.length > 50) logs.length = 50;
-            localStorage.setItem("ocr_logs", JSON.stringify(logs));
-        }
-
-        function listarLogsOCR() {
-            return JSON.parse(localStorage.getItem("ocr_logs")) || [];
-        }
-
-        /* --- FIM DO OCR SMART --- */
-
-        function openTab(id, btn) {
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-            document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-            document.getElementById(id).classList.add('active'); btn.classList.add('active');
-        }
         function resetForm() {
-            document.getElementById("edit-id").value = ""; document.getElementById("om").value = "";
-            document.getElementById("patrimonio").value = ""; document.getElementById("nome").value = "";
-            document.getElementById("horas").value = ""; document.getElementById("valor").value = "";
-            document.getElementById("form-title").innerText = "NOVO SERVIÇO";
-            document.getElementById("btn-salvar").innerText = "SALVAR NO CELULAR";
-            document.getElementById("btn-cancelar-edit").style.display = "none";
+            ["edit-id", "f-om", "f-pat", "f-hrs", "f-val", "f-abertura", "f-entrega"].forEach(id => document.getElementById(id).value = "");
+            document.getElementById("f-status").value = "Liberado";
+            document.getElementById("f-indenizacao").checked = false;
+            document.getElementById("f-ident").checked = false;
+            document.getElementById("timer").innerText = "00:00:00";
+            checkIndenizacao();
         }
+
+        async function processarOCR(event) {
+            const file = event.target.files[0]; if(!file) return;
+            showLoader("Lendo Imagem...");
+            try {
+                const worker = await Tesseract.createWorker("por", 1);
+                const { data: { text } } = await worker.recognize(file);
+                await worker.terminate();
+                const match = text.match(/OM\s*N?[ºo°]?\s*:?\s*(\d+)/i) || text.match(/(\d{4,})/);
+                if(match) document.getElementById("f-om").value = match[1];
+                else alert("OM nao detectada.");
+            } catch(e) { alert("Erro OCR."); }
+            hideLoader();
+            event.target.value = "";
+        }
+
         function showLoader(t) { document.getElementById("loader-text").innerText = t; document.getElementById("loader-global").style.display = "flex"; }
         function hideLoader() { document.getElementById("loader-global").style.display = "none"; }
+        function toggleAll(c) { document.querySelectorAll('.sync-check:not([disabled])').forEach(cb => cb.checked = c.checked); updateSelectedCount(); }
+        function toggleAllVisible() { const c = document.getElementById('check-all'); c.checked = !c.checked; toggleAll(c); }
         function salvarNomeTecnico() { localStorage.setItem("tecnico_atual", document.getElementById("usuario_nome").value); }
-        function toggleAll(s) { document.querySelectorAll('.sync-check:not([disabled])').forEach(c => c.checked = s.checked); }
-        function clearAll() { if(confirm("Tem certeza? Isso limpa apenas a memória do celular.")) { inventoryData=[]; localStorage.removeItem("oficina_inventory"); load(); } }
-        
+        function salvarPerfil() { salvarNomeTecnico(); alert("Salvo!"); }
+        function checkIndenizacao() { 
+            const s = document.getElementById("f-status").value; 
+            const b = document.getElementById("box-indenizacao");
+            if(s === "Aguardando Pecas") { b.classList.remove("opacity-30"); b.style.pointerEvents = "auto"; }
+            else { b.classList.add("opacity-30"); document.getElementById("f-indenizacao").checked = false; b.style.pointerEvents = "none"; }
+        }
+        function showSyncStatus() {
+            const p = inventoryData.filter(i => !i.sincronizado).length;
+            alert(`Pendentes: ${p}\nSincronizados: ${inventoryData.length - p}`);
+        }
+        function clearAll() { if(confirm("Apagar TUDO?")) { inventoryData = []; localStorage.clear(); location.reload(); } }
+
+        // ==================== EXPORTACAO ====================
+        function exportXLSX() {
+            if(inventoryData.length === 0) { alert("Vazio!"); return; }
+            const ws = XLSX.utils.json_to_sheet(inventoryData.map(i => ({ OM: i.om, Patrimonio: i.patrimonio, Equipamento: i.nome, Horas: i.horas, Valor: i.valor, Data: i.data, Status: i.status })));
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "Dados");
+            XLSX.writeFile(wb, "Vertical_Export.xlsx");
+        }
+
         async function generatePDF() {
+            if(inventoryData.length === 0) { alert("Vazio!"); return; }
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-            const tecnico = document.getElementById("usuario_nome").value || "Tecnico";
-            
-            // Cabeçalho PDF
-            doc.setFillColor(255, 204, 0); doc.rect(0, 0, 210, 20, 'F');
-            doc.setFontSize(16); doc.text(`RELATÓRIO - ${tecnico}`, 105, 13, null, null, "center");
-            
-            const body = inventoryData.map(i => [i.data, i.om, i.patrimonio || "-", i.nome, i.horas, i.valor.toFixed(2)]);
-            
-            doc.autoTable({ 
-                head: [['Data', 'OM', 'Patr.', 'Equip.', 'Hrs', 'Valor']], 
-                body: body, 
-                startY: 25,
-                theme: 'grid'
+            doc.setFontSize(18);
+            doc.text("Vertical Locacoes - Relatorio", 14, 22);
+            doc.autoTable({
+                head: [['OM', 'Equipamento', 'Patrimonio', 'Valor', 'Status']],
+                body: inventoryData.map(i => [i.om, i.nome, i.patrimonio, `R$ ${Number(i.valor).toFixed(2)}`, i.status]),
+                startY: 30
             });
-
-            // Rodapé com Totais
-            const totalH = inventoryData.reduce((acc, i) => acc + (Number(i.horas)||0), 0);
-            const totalV = inventoryData.reduce((acc, i) => acc + i.valor, 0);
-            
-            doc.setFontSize(12);
-            const finalY = doc.lastAutoTable.finalY + 10;
-            doc.text(`TOTAL HORAS: ${totalH.toFixed(1)}`, 14, finalY);
-            doc.text(`TOTAL VALOR: R$ ${totalV.toFixed(2)}`, 150, finalY);
-
-            doc.save(`Relatorio_${tecnico}.pdf`);
+            doc.save("Relatorio_Vertical.pdf");
         }
     </script>
-
-    <script>
-        window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
-    </script>
-    <script defer src="/_vercel/speed-insights/script.js"></script>
 </body>
-</html>
+    </html>
