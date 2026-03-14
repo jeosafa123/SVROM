@@ -241,7 +241,6 @@
 
             <div class="card-hardware p-4 space-y-4">
                 <div class="grid grid-cols-2 gap-3">
-                    <!-- ALTERAÇÃO: Inputs de data agora são editáveis (removido readonly) -->
                     <div>
                         <label class="text-[8px] font-black text-gray-500 uppercase mb-1 block">Data Inicio</label>
                         <input type="text" id="f-abertura" class="input-hardware" placeholder="DD/MM/AAAA HH:MM">
@@ -405,44 +404,44 @@
         const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwLyqim33McWCBNZ4Pc5LQJygGcR0ZGMtKCvUO3xB5haixT_fU2d_3-h8h-bZL_5u5A/exec"; 
         const TOKEN = "OFICINA-SEGURA-123";
         
-        // ATUALIZAÇÃO: Lista com 37 máquinas
+        // ATUALIZAÇÃO: Lista organizada e com sintaxe correta (pontos ao invés de vírgulas)
         const tabelaPrecos = [
-            {  nome : "ACABADORA DE SUPERF" ,  valor : 2.00 ,  horas : 5.0  } ,
-            {  nome : "BALANCIM CADEIRINHA" ,  valor : 2,00 ,  horas : 2,25  } ,
-            {  nome : "BANCADA DE SERRA" ,  valor : 8,00 ,  horas : 4,5  } ,
-            {  nome : "BETONEIRA 150 LT" ,  valor : 6,00 ,  horas : 4,5  } ,
-            {  nome : "BETONEIRA 400LT" ,  valor : 6,00 ,  horas : 4,5  } ,
-            {  nome : "BETONEIRA 600LT" ,  valor : 16,90 ,  horas : 16,0  } ,
-            {  nome : "BOMBA MANGOTE" ,  valor : 4,00 ,  horas : 3,0  } ,
-            {  nome : "BOMBA SUBMERSA" ,  valor : 4,00 ,  horas : 4,0  } ,
-            {  nome : "COMPACTADOR" ,  valor : 3,00 ,  horas : 4,0  } ,
-            {  nome : "CORTADORA" ,  valor : 3,00 ,  horas : 4,0  } ,
-            {  nome : "GERADOR" ,  valor : 3,00 ,  horas : 3,2  } ,
-            {  nome : "GUINCHO DE ELEVAÇÃO" ,  valor : 10.00 ,  horas : 6.0  } ,
-            {  nome : "MARTELO 2 KG - 220V" ,  valor : 1,50 ,  horas : 2,0  } ,
-            {  nome : "MARTELO 5,7 KG-220V" ,  valor : 1,50 ,  horas : 2,0  } ,
-            {  nome : "MARTELO 6 KG - 220V" ,  valor : 1,70 ,  horas : 2,0  } ,
-            {  nome : "MARTELO 11 KG - ROT" ,  valor : 2,00 ,  horas : 2,2  } ,
-            {  nome : "MARTELO 11 KG - 220V" ,  valor : 1,70 ,  horas : 2,2  } ,
-            {  nome : "MARTELO 16/19 KG" ,  valor : 2,00 ,  horas : 2,3  } ,
-            {  nome : "MARTELO 19 KG - 220V" ,  valor : 2,00 ,  horas : 2,5  } ,
-            {  nome : "MARTELO 30 KG - 220V" ,  valor : 2,00 ,  horas : 2,5  } ,
-            {  nome : "MINI GRUA" ,  valor : 10,00 ,  horas : 6,0  } ,
-            {  nome : "MOTOR - ACIONADOR" ,  valor : 3,00 ,  horas : 3,0  } ,
-            {  nome : "MOTOR - ELET_TRIFA" ,  valor : 3,00 ,  horas : 3,0  } ,
-            {  nome : "PLACA VIBRATORIA" ,  valor : 3,50 ,  horas : 4,5  } ,
-            {  nome : "REGUA VIBRATORIA" ,  valor : 5,00 ,  horas : 4,5  } ,
-            {  nome : "TORRE DE ILUMINAÇÃO" ,  valor : 25,00 ,  horas : 6,0  } ,
-            {  nome : "MINI TORRE DE ILUMINAÇÃO" ,  valor : 2,00 ,  horas : 2,0  } ,
-            {  nome : "UNIDADES HIDRÁULICA" ,  valor : 8,00 ,  horas : 16,0  } ,
-            {  nome : "VIBRADOR DE IMERSÃO" ,  valor : 2,80 ,  horas : 4,0  } ,
-            {  nome : "ROLO COMPACTADOR" ,  valor : 20,00 ,  horas : 24,0  } ,
-            {  nome : "MINI CARREGADEIRA" ,  valor : 34,00 ,  horas : 16,0  } ,
-            {  nome : "MINI ESCAVADEIRA" ,  valor : 34,00 ,  horas : 16,0  } ,
-            {  nome : "VELOX" ,  valor : 8,00 ,  horas : 6,0  } ,
-            {  nome : "PERFURATRIZ" ,  valor : 25,00 ,  horas : 6,0  } ,
-            {  nome : "MAQUINA PESADA" ,  valor : 34,00 ,  horas : 16,0  }
-        ] ;
+            { nome: "ACABADORA DE SUPERF", valor: 2.00, horas: 5.0 },
+            { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
+            { nome: "BANCADA DE SERRA", valor: 8.00, horas: 4.5 },
+            { nome: "BETONEIRA 150 LT", valor: 6.00, horas: 4.5 },
+            { nome: "BETONEIRA 400LT", valor: 6.00, horas: 4.5 },
+            { nome: "BETONEIRA 600LT", valor: 16.90, horas: 16.0 },
+            { nome: "BOMBA MANGOTE", valor: 4.00, horas: 3.0 },
+            { nome: "BOMBA SUBMERSA", valor: 4.00, horas: 4.0 },
+            { nome: "COMPACTADOR", valor: 3.00, horas: 4.0 },
+            { nome: "CORTADORA", valor: 3.00, horas: 4.0 },
+            { nome: "GERADOR", valor: 3.00, horas: 3.2 },
+            { nome: "GUINCHO DE ELEVACAO", valor: 10.00, horas: 6.0 },
+            { nome: "MARTELO 2 KG - 220V", valor: 1.50, horas: 2.0 },
+            { nome: "MARTELO 5.7 KG-220V", valor: 1.50, horas: 2.0 },
+            { nome: "MARTELO 6 KG - 220V", valor: 1.70, horas: 2.0 },
+            { nome: "MARTELO 11 KG - ROT", valor: 2.00, horas: 2.2 },
+            { nome: "MARTELO 11 KG - 220V", valor: 1.70, horas: 2.2 },
+            { nome: "MARTELO 16/19 KG", valor: 2.00, horas: 2.3 },
+            { nome: "MARTELO 19 KG - 220V", valor: 2.00, horas: 2.5 },
+            { nome: "MARTELO 30 KG - 220V", valor: 2.00, horas: 2.5 },
+            { nome: "MINI GRUA", valor: 10.00, horas: 6.0 },
+            { nome: "MOTOR - ACIONADOR", valor: 3.00, horas: 3.0 },
+            { nome: "MOTOR - ELET TRIFA", valor: 3.00, horas: 3.0 },
+            { nome: "PLACA VIBRATORIA", valor: 3.50, horas: 4.5 },
+            { nome: "REGUA VIBRATORIA", valor: 5.00, horas: 4.5 },
+            { nome: "TORRE DE ILUMINACAO", valor: 25.00, horas: 6.0 },
+            { nome: "MINI TORRE DE ILUMINACAO", valor: 2.00, horas: 2.0 },
+            { nome: "UNIDADES HIDRAULICA", valor: 8.00, horas: 16.0 },
+            { nome: "VIBRADOR DE IMERSAO", valor: 2.80, horas: 4.0 },
+            { nome: "ROLO COMPACTADOR", valor: 20.00, horas: 24.0 },
+            { nome: "MINI CARREGADEIRA", valor: 34.00, horas: 16.0 },
+            { nome: "MINI ESCAVADEIRA", valor: 34.00, horas: 16.0 },
+            { nome: "VELOX", valor: 8.00, horas: 6.0 },
+            { nome: "PERFURATRIZ", valor: 25.00, horas: 6.0 },
+            { nome: "MAQUINA PESADA", valor: 34.00, horas: 16.0 }
+        ];
 
         let inventoryData = [];
         let timer = { active: false, sec: 0, interval: null };
@@ -528,7 +527,6 @@
                 timer.sec = 0;
                 btn.innerHTML = '<i data-lucide="square" class="w-4 h-4"></i> Finalizar Trabalho';
                 btn.classList.remove('bg-green-600'); btn.classList.add('bg-red-600');
-                // Preenche automaticamente, mas continua editável
                 document.getElementById('f-abertura').value = new Date().toLocaleString('pt-BR');
                 document.getElementById('f-entrega').value = "";
                 timer.interval = setInterval(function() { timer.sec++; updateTimerDisplay(); }, 1000);
@@ -588,7 +586,6 @@
         }
 
         // ==================== CARREGAR INTERFACE ====================
-        // CORREÇÃO: Função auxiliar para garantir conversão de número
         function parseValor(val) {
             if (!val) return 0;
             return parseFloat(String(val).replace(',', '.')) || 0;
@@ -637,7 +634,6 @@
             const sincronizados = inventoryData.filter(i => i.sincronizado).length;
             const pendentes = totalRegistros - sincronizados;
             
-            // CORREÇÃO: Calcula faturamento usando parseValor para evitar erros com texto
             const validados = inventoryData.filter(function(i) { 
                 return i.status === "Liberado" || (i.status === "Aguardando Pecas" && i.indenizacao);
             });
@@ -728,7 +724,6 @@
             }
         }
 
-        // JSONP Helper
         function fetchJsonp(url) {
             return new Promise(function(resolve, reject) {
                 var callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
@@ -877,4 +872,4 @@
         }
     </script>
 </body>
-</html>
+                        </html>
