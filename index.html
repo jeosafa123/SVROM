@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>Vertical Locações - Oficina Smart v21.3</title>
+    <title>Vertical Locações - Oficina Smart v21.5</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -164,6 +164,15 @@
         .timer-display { font-variant-numeric: tabular-nums; text-shadow: 0 0 30px rgba(255, 204, 0, 0.4); }
         
         select option { background: #141414; color: #fff; padding: 10px; }
+        
+        /* Classe para destacar o input da OM */
+        .input-om-highlight {
+            font-size: 1.1rem;
+            font-weight: 900;
+            text-align: center;
+            color: var(--primary);
+            letter-spacing: 1px;
+        }
     </style>
 </head>
 <body class="h-screen w-screen flex flex-col">
@@ -252,7 +261,8 @@
                 </div>
                 
                 <div class="grid grid-cols-2 gap-3">
-                    <input type="text" id="f-om" class="input-hardware" placeholder="Numero da OM *" maxlength="20">
+                    <!-- MODIFICAÇÃO: Input da OM com destaque -->
+                    <input type="text" id="f-om" class="input-hardware input-om-highlight" placeholder="NUMERO OM *" maxlength="20">
                     <input type="text" id="f-pat" class="input-hardware" placeholder="Patrimonio" maxlength="15">
                 </div>
                 
@@ -323,7 +333,7 @@
                                 <th class="p-3 w-8"><input type="checkbox" id="check-all" onclick="toggleAll(this)"></th>
                                 <th class="p-3">Servico (OM / MAQ / PAT)</th>
                                 <th class="p-3 text-right">Financeiro</th>
-                                <th class="p-3 w-8 text-center">Acoes</th>
+                                <th class="p-3 w-16 text-center">Acoes</th>
                             </tr>
                         </thead>
                         <tbody id="t-body" class="divide-y divide-white/5"></tbody>
@@ -371,7 +381,7 @@
                     </div>
                     <div class="bg-white/5 p-3 rounded">
                         <p class="text-[7px] text-gray-500 uppercase">Versao</p>
-                        <p class="text-lg font-black text-gray-400">21.3</p>
+                        <p class="text-lg font-black text-gray-400">21.5</p>
                     </div>
                 </div>
             </div>
@@ -401,10 +411,9 @@
 
     <script>
         // ==================== CONFIGURACOES ====================
-        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbxiqT9wxruzcOzrMjGd5wKQIeQj0H8GzJZ51QsL-l2NeZtrEf4_Pv9C9taQCYXQKWS6/exec"; 
+        const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwLyqim33McWCBNZ4Pc5LQJygGcR0ZGMtKCvUO3xB5haixT_fU2d_3-h8h-bZL_5u5A/exec"; 
         const TOKEN = "OFICINA-SEGURA-123";
         
-        // ATUALIZAÇÃO: Lista organizada e com sintaxe correta (pontos ao invés de vírgulas)
         const tabelaPrecos = [
             { nome: "ACABADORA DE SUPERF", valor: 2.00, horas: 5.0 },
             { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
@@ -549,7 +558,7 @@
             document.getElementById('timer').innerText = `${h}:${m}:${s}`;
         }
 
-        // ==================== SALVAR ITEM ====================
+        // ==================== SALVAR ITEM COM NOTIFICACAO ====================
         function saveItem() {
             const tecnico = document.getElementById("usuario_nome").value.trim();
             if(!tecnico) { alert("Configure seu nome na aba Ajustes!"); nav('equipe'); return; }
@@ -574,6 +583,22 @@
                 identificado: document.getElementById("f-ident").checked
             };
 
+            // NOVA FUNCIONALIDADE: Notificação de confirmação dos dados
+            const mensagemConfirmacao = 
+                "CONFIRMAÇÃO DE LANÇAMENTO\n\n" +
+                "OM: " + dados.om + "\n" +
+                "Patrimônio: " + dados.patrimonio + "\n" +
+                "Equipamento: " + dados.nome + "\n" +
+                "--------------------------------\n" +
+                "Horas: " + dados.horas.toFixed(2) + "\n" +
+                "Valor: R$ " + dados.valor.toFixed(2) + "\n" +
+                "Status: " + dados.status + "\n\n" +
+                "Os dados estão corretos?";
+
+            if(!confirm(mensagemConfirmacao)) {
+                return; // Cancela se o usuário clicar em "Cancelar"
+            }
+
             if(idEdit) {
                 const idx = inventoryData.findIndex(function(i) { return i.id == idEdit; });
                 if(idx !== -1) inventoryData[idx] = { ...inventoryData[idx], ...dados, sincronizado: false };
@@ -582,7 +607,7 @@
             }
             
             localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
-            resetForm(); nav('dashboard'); alert("Registro salvo!");
+            resetForm(); nav('dashboard'); alert("Registro salvo com sucesso!");
         }
 
         // ==================== CARREGAR INTERFACE ====================
@@ -612,19 +637,23 @@
                     const syncChecked = i.sincronizado ? 'checked' : '';
                     const statusColor = i.status === 'Liberado' ? 'text-green-500' : 'text-orange-500';
                     
+                    // MODIFICAÇÃO: OM com destaque maior e botões de ação
                     return `<tr class="${syncClass}">
                         <td class="p-3"><input type="checkbox" class="sync-check" data-id="${i.id}" ${syncDisabled} ${syncChecked} onchange="updateSelectedCount()"></td>
                         <td class="p-3">
-                            <div class="font-black text-[var(--primary)] text-[11px] uppercase">OM: ${i.om}</div>
-                            <div class="text-[9px] font-black text-gray-200 uppercase">${i.nome || '-'}</div>
-                            <div class="text-[8px] text-gray-500">Pat: ${i.patrimonio || 'S/N'}</div>
+                            <div class="text-sm font-black text-[var(--primary)] uppercase tracking-wide">OM: ${i.om}</div>
+                            <div class="text-[9px] font-bold text-gray-200 uppercase mt-1">${i.nome || '-'}</div>
+                            <div class="text-[8px] text-gray-500 mt-1">Pat: ${i.patrimonio || 'S/N'}</div>
                         </td>
                         <td class="p-3 text-right">
                             <div class="font-black text-xs">R$ ${(Number(i.valor) || 0).toFixed(2)}</div>
                             <div class="text-[7px] font-black ${statusColor} uppercase">${i.status || '-'}</div>
                         </td>
                         <td class="p-3 text-center">
-                            <button onclick="editItem(${i.id})" class="text-gray-500 hover:text-[var(--primary)]"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                            <div class="flex gap-2 justify-center">
+                                <button onclick="editItem(${i.id})" class="text-gray-500 hover:text-[var(--primary)] transition-colors" title="Editar"><i data-lucide="edit-3" class="w-4 h-4"></i></button>
+                                <button onclick="deleteItem(${i.id})" class="text-gray-500 hover:text-red-500 transition-colors" title="Excluir"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                            </div>
                         </td>
                     </tr>`;
                 }).join('');
@@ -785,7 +814,7 @@
             hideLoader();
         }
 
-        // ==================== EDITAR / UTILS ====================
+        // ==================== EDITAR / EXCLUIR / UTILS ====================
         function editItem(id) {
             const item = inventoryData.find(i => i.id == id);
             if(!item) return;
@@ -804,6 +833,24 @@
             document.getElementById("f-ident").checked = item.identificado;
             checkIndenizacao();
             nav('lancamento');
+        }
+
+        // FUNÇÃO EXCLUIR ADICIONADA
+        function deleteItem(id) {
+            const item = inventoryData.find(i => i.id == id);
+            if(!item) return;
+            
+            if(item.sincronizado) {
+                alert("Este registro já está sincronizado na nuvem.\nNão é possível excluir localmente.");
+                return;
+            }
+
+            if(confirm(`Tem certeza que deseja EXCLUIR a OM ${item.om}?\nEsta ação não pode ser desfeita.`)) {
+                inventoryData = inventoryData.filter(function(i) { return i.id !== id; });
+                localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
+                loadInterface();
+                alert("Registro excluído com sucesso!");
+            }
         }
 
         function resetForm() {
@@ -872,4 +919,4 @@
         }
     </script>
 </body>
-                        </html>
+</html>
