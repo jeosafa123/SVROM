@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>Vertical Locações - Oficina Smart v21.5</title>
+    <title>Vertical Locações - Oficina Smart v21.6</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -11,7 +11,8 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+    <!-- OCR: Usando a versão mais recente e estável -->
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
     <style>
         :root {
@@ -165,7 +166,6 @@
         
         select option { background: #141414; color: #fff; padding: 10px; }
         
-        /* Classe para destacar o input da OM */
         .input-om-highlight {
             font-size: 1.1rem;
             font-weight: 900;
@@ -261,7 +261,6 @@
                 </div>
                 
                 <div class="grid grid-cols-2 gap-3">
-                    <!-- MODIFICAÇÃO: Input da OM com destaque -->
                     <input type="text" id="f-om" class="input-hardware input-om-highlight" placeholder="NUMERO OM *" maxlength="20">
                     <input type="text" id="f-pat" class="input-hardware" placeholder="Patrimonio" maxlength="15">
                 </div>
@@ -381,7 +380,7 @@
                     </div>
                     <div class="bg-white/5 p-3 rounded">
                         <p class="text-[7px] text-gray-500 uppercase">Versao</p>
-                        <p class="text-lg font-black text-gray-400">21.5</p>
+                        <p class="text-lg font-black text-gray-400">21.6</p>
                     </div>
                 </div>
             </div>
@@ -583,20 +582,19 @@
                 identificado: document.getElementById("f-ident").checked
             };
 
-            // NOVA FUNCIONALIDADE: Notificação de confirmação dos dados
             const mensagemConfirmacao = 
-                "CONFIRMAÇÃO DE LANÇAMENTO\n\n" +
+                "CONFIRMACAO DE LANCAMENTO\n\n" +
                 "OM: " + dados.om + "\n" +
-                "Patrimônio: " + dados.patrimonio + "\n" +
+                "Patrimonio: " + dados.patrimonio + "\n" +
                 "Equipamento: " + dados.nome + "\n" +
                 "--------------------------------\n" +
                 "Horas: " + dados.horas.toFixed(2) + "\n" +
                 "Valor: R$ " + dados.valor.toFixed(2) + "\n" +
                 "Status: " + dados.status + "\n\n" +
-                "Os dados estão corretos?";
+                "Os dados estao corretos?";
 
             if(!confirm(mensagemConfirmacao)) {
-                return; // Cancela se o usuário clicar em "Cancelar"
+                return;
             }
 
             if(idEdit) {
@@ -637,7 +635,6 @@
                     const syncChecked = i.sincronizado ? 'checked' : '';
                     const statusColor = i.status === 'Liberado' ? 'text-green-500' : 'text-orange-500';
                     
-                    // MODIFICAÇÃO: OM com destaque maior e botões de ação
                     return `<tr class="${syncClass}">
                         <td class="p-3"><input type="checkbox" class="sync-check" data-id="${i.id}" ${syncDisabled} ${syncChecked} onchange="updateSelectedCount()"></td>
                         <td class="p-3">
@@ -753,17 +750,35 @@
             }
         }
 
+        // CORREÇÃO 1: Função fetchJsonp com Timeout para não travar
         function fetchJsonp(url) {
             return new Promise(function(resolve, reject) {
-                var callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-                window[callbackName] = function(data) {
-                    delete window[callbackName];
+                const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
+                
+                const script = document.createElement('script');
+                script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+                
+                // Timeout de 15 segundos para não travar o app
+                const timeoutId = setTimeout(function() {
                     document.body.removeChild(script);
+                    delete window[callbackName];
+                    reject(new Error("Tempo esgotado (Timeout). Verifique sua conexao."));
+                }, 15000);
+
+                window[callbackName] = function(data) {
+                    clearTimeout(timeoutId);
+                    document.body.removeChild(script);
+                    delete window[callbackName];
                     resolve(data);
                 };
 
-                var script = document.createElement('script');
-                script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
+                script.onerror = function() {
+                    clearTimeout(timeoutId);
+                    document.body.removeChild(script);
+                    delete window[callbackName];
+                    reject(new Error("Erro ao carregar script."));
+                };
+
                 document.body.appendChild(script);
             });
         }
@@ -805,11 +820,11 @@
                     }
                     alert(msg);
                 } else {
-                    alert(data.message || "Nenhum registro encontrado.");
+                    alert(data.message || "Nenhum registro encontrado para este tecnico/mes.");
                 }
             } catch(e) {
                 console.error("Erro import:", e);
-                alert("Erro ao baixar backup.");
+                alert("Erro ao baixar backup: " + e.message);
             }
             hideLoader();
         }
@@ -835,7 +850,6 @@
             nav('lancamento');
         }
 
-        // FUNÇÃO EXCLUIR ADICIONADA
         function deleteItem(id) {
             const item = inventoryData.find(i => i.id == id);
             if(!item) return;
@@ -862,18 +876,55 @@
             checkIndenizacao();
         }
 
+        // CORREÇÃO 2: Função OCR atualizada para Tesseract v5
         async function processarOCR(event) {
-            const file = event.target.files[0]; if(!file) return;
-            showLoader("Lendo Imagem...");
+            const file = event.target.files[0]; 
+            if(!file) return;
+            
+            showLoader("Processando Imagem...");
+            
             try {
-                const worker = await Tesseract.createWorker("por", 1);
-                const { data: { text } } = await worker.recognize(file);
-                await worker.terminate();
-                const match = text.match(/OM\s*N?[ºo°]?\s*:?\s*(\d+)/i) || text.match(/(\d{4,})/);
-                if(match) document.getElementById("f-om").value = match[1];
-                else alert("OM nao detectada.");
-            } catch(e) { alert("Erro OCR."); }
-            hideLoader();
+                // Sintaxe correta para Tesseract v5
+                const result = await Tesseract.recognize(file, 'por', {
+                    logger: m => {
+                        if(m.status === 'recognizing text') {
+                            const p = Math.round(m.progress * 100);
+                            document.getElementById("loader-text").innerText = `Lendo... ${p}%`;
+                        }
+                    }
+                });
+                
+                const text = result.data.text;
+                
+                // Tentar extrair OM de várias formas
+                // Padrão 1: OM seguida de número (ex: OM 12345, OM: 12345)
+                let match = text.match(/OM\s*[:]?\s*(\d+)/i);
+                
+                // Padrão 2: Número grande isolado (provavelmente a OM)
+                if(!match) {
+                    match = text.match(/\b(\d{4,})\b/);
+                }
+                
+                // Padrão 3: Procurar "Ordem" seguido de número
+                if(!match) {
+                    match = text.match(/ORDEM\s*[:]?\s*(\d+)/i);
+                }
+
+                if(match && match[1]) {
+                    document.getElementById("f-om").value = match[1];
+                    hideLoader();
+                    alert(`OM detectada: ${match[1]}`);
+                } else {
+                    hideLoader();
+                    alert("Não foi possível detectar o número da OM automaticamente.\nTente digitar manualmente.");
+                }
+                
+            } catch(e) {
+                console.error(e);
+                hideLoader();
+                alert("Erro ao processar a imagem. Tente novamente.");
+            }
+            
             event.target.value = "";
         }
 
@@ -919,4 +970,4 @@
         }
     </script>
 </body>
-</html>
+                                                               </html>
