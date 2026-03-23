@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>Vertical Locações - Oficina Smart v21.6</title>
+    <title>Vertical Locações - Oficina Smart v21.7</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -11,7 +11,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
-    <!-- OCR: Usando a versão mais recente e estável -->
+    <!-- OCR: Biblioteca atualizada -->
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 
     <style>
@@ -166,6 +166,7 @@
         
         select option { background: #141414; color: #fff; padding: 10px; }
         
+        /* Destaque para OM */
         .input-om-highlight {
             font-size: 1.1rem;
             font-weight: 900;
@@ -250,6 +251,7 @@
 
             <div class="card-hardware p-4 space-y-4">
                 <div class="grid grid-cols-2 gap-3">
+                    <!-- Inputs de data editáveis -->
                     <div>
                         <label class="text-[8px] font-black text-gray-500 uppercase mb-1 block">Data Inicio</label>
                         <input type="text" id="f-abertura" class="input-hardware" placeholder="DD/MM/AAAA HH:MM">
@@ -261,6 +263,7 @@
                 </div>
                 
                 <div class="grid grid-cols-2 gap-3">
+                    <!-- OM com destaque -->
                     <input type="text" id="f-om" class="input-hardware input-om-highlight" placeholder="NUMERO OM *" maxlength="20">
                     <input type="text" id="f-pat" class="input-hardware" placeholder="Patrimonio" maxlength="15">
                 </div>
@@ -380,7 +383,7 @@
                     </div>
                     <div class="bg-white/5 p-3 rounded">
                         <p class="text-[7px] text-gray-500 uppercase">Versao</p>
-                        <p class="text-lg font-black text-gray-400">21.6</p>
+                        <p class="text-lg font-black text-gray-400">21.7</p>
                     </div>
                 </div>
             </div>
@@ -413,6 +416,7 @@
         const GOOGLE_URL = "https://script.google.com/macros/s/AKfycbwLyqim33McWCBNZ4Pc5LQJygGcR0ZGMtKCvUO3xB5haixT_fU2d_3-h8h-bZL_5u5A/exec"; 
         const TOKEN = "OFICINA-SEGURA-123";
         
+        // Lista com 37 máquinas
         const tabelaPrecos = [
             { nome: "ACABADORA DE SUPERF", valor: 2.00, horas: 5.0 },
             { nome: "BALANCIM CADEIRINHA", valor: 2.00, horas: 2.25 },
@@ -750,39 +754,8 @@
             }
         }
 
-        // CORREÇÃO 1: Função fetchJsonp com Timeout para não travar
-        function fetchJsonp(url) {
-            return new Promise(function(resolve, reject) {
-                const callbackName = 'jsonp_callback_' + Math.round(100000 * Math.random());
-                
-                const script = document.createElement('script');
-                script.src = url + (url.indexOf('?') >= 0 ? '&' : '?') + 'callback=' + callbackName;
-                
-                // Timeout de 15 segundos para não travar o app
-                const timeoutId = setTimeout(function() {
-                    document.body.removeChild(script);
-                    delete window[callbackName];
-                    reject(new Error("Tempo esgotado (Timeout). Verifique sua conexao."));
-                }, 15000);
-
-                window[callbackName] = function(data) {
-                    clearTimeout(timeoutId);
-                    document.body.removeChild(script);
-                    delete window[callbackName];
-                    resolve(data);
-                };
-
-                script.onerror = function() {
-                    clearTimeout(timeoutId);
-                    document.body.removeChild(script);
-                    delete window[callbackName];
-                    reject(new Error("Erro ao carregar script."));
-                };
-
-                document.body.appendChild(script);
-            });
-        }
-
+        // ==================== CORRECAO PRINCIPAL: Download com Fetch Simples ====================
+        // Removido fetchJsonp. Usando fetch padrão que funcionava na v21.2
         async function importFromCloud() {
             const tecnico = document.getElementById("usuario_nome").value.trim();
             const mes = document.getElementById("filtro_mes").value;
@@ -793,17 +766,21 @@
             showLoader("Baixando Registros...");
             
             try {
+                // MÉTODO SIMPLES E FUNCIONAL (Igual v21.2)
                 const url = `${GOOGLE_URL}?action=getBackup&usuario=${encodeURIComponent(tecnico)}&mes=${mes}`;
-                const data = await fetchJsonp(url);
+                const response = await fetch(url);
+                const data = await response.json();
                 
                 if(data.success && data.itens) {
+                    // Garantir que valores sejam numeros
                     const formatados = data.itens.map(i => ({
                         ...i,
-                        valor: parseValor(i.valor),
-                        horas: parseValor(i.horas),
+                        valor: parseFloat(i.valor) || 0,
+                        horas: parseFloat(i.horas) || 0,
                         sincronizado: true
                     }));
                     
+                    // Merge inteligente
                     formatados.forEach(novo => {
                         if(!inventoryData.some(local => String(local.id) === String(novo.id))) {
                             inventoryData.push(novo);
@@ -813,18 +790,19 @@
                     localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
                     loadInterface();
                     
+                    // Exibir resumo se existir
                     let msg = `Backup recuperado: ${formatados.length} registros.`;
                     if(data.resumo) {
-                        msg += `\n\nFaturamento: R$ ${parseValor(data.resumo.faturamento).toFixed(2)}`;
-                        msg += `\nHoras: ${parseValor(data.resumo.horas).toFixed(1)}`;
+                        msg += `\n\nFaturamento do Periodo: R$ ${Number(data.resumo.faturamento).toFixed(2)}`;
+                        msg += `\nHoras: ${Number(data.resumo.horas).toFixed(1)}`;
                     }
                     alert(msg);
                 } else {
-                    alert(data.message || "Nenhum registro encontrado para este tecnico/mes.");
+                    alert(data.message || "Nenhum registro encontrado.");
                 }
             } catch(e) {
                 console.error("Erro import:", e);
-                alert("Erro ao baixar backup: " + e.message);
+                alert("Erro ao baixar backup. Verifique a URL e conexao.");
             }
             hideLoader();
         }
@@ -876,7 +854,7 @@
             checkIndenizacao();
         }
 
-        // CORREÇÃO 2: Função OCR atualizada para Tesseract v5
+        // OCR Atualizado para Tesseract v5
         async function processarOCR(event) {
             const file = event.target.files[0]; 
             if(!file) return;
@@ -884,31 +862,20 @@
             showLoader("Processando Imagem...");
             
             try {
-                // Sintaxe correta para Tesseract v5
                 const result = await Tesseract.recognize(file, 'por', {
                     logger: m => {
                         if(m.status === 'recognizing text') {
-                            const p = Math.round(m.progress * 100);
-                            document.getElementById("loader-text").innerText = `Lendo... ${p}%`;
+                            document.getElementById("loader-text").innerText = `Lendo... ${Math.round(m.progress * 100)}%`;
                         }
                     }
                 });
                 
                 const text = result.data.text;
                 
-                // Tentar extrair OM de várias formas
-                // Padrão 1: OM seguida de número (ex: OM 12345, OM: 12345)
+                // Tentar extrair OM de varias formas
                 let match = text.match(/OM\s*[:]?\s*(\d+)/i);
-                
-                // Padrão 2: Número grande isolado (provavelmente a OM)
-                if(!match) {
-                    match = text.match(/\b(\d{4,})\b/);
-                }
-                
-                // Padrão 3: Procurar "Ordem" seguido de número
-                if(!match) {
-                    match = text.match(/ORDEM\s*[:]?\s*(\d+)/i);
-                }
+                if(!match) match = text.match(/\b(\d{4,})\b/); // Numero grande
+                if(!match) match = text.match(/ORDEM\s*[:]?\s*(\d+)/i);
 
                 if(match && match[1]) {
                     document.getElementById("f-om").value = match[1];
@@ -916,13 +883,13 @@
                     alert(`OM detectada: ${match[1]}`);
                 } else {
                     hideLoader();
-                    alert("Não foi possível detectar o número da OM automaticamente.\nTente digitar manualmente.");
+                    alert("Não foi possível detectar o número da OM automaticamente.");
                 }
                 
             } catch(e) {
                 console.error(e);
                 hideLoader();
-                alert("Erro ao processar a imagem. Tente novamente.");
+                alert("Erro ao processar a imagem.");
             }
             
             event.target.value = "";
@@ -970,4 +937,4 @@
         }
     </script>
 </body>
-</html>
+    </html>
