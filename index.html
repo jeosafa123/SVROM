@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-    <title>Vertical Locações - Oficina Smart v21.7</title>
+    <title>Vertical Locações - Oficina Smart v21.8</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
@@ -251,7 +251,6 @@
 
             <div class="card-hardware p-4 space-y-4">
                 <div class="grid grid-cols-2 gap-3">
-                    <!-- Inputs de data editáveis -->
                     <div>
                         <label class="text-[8px] font-black text-gray-500 uppercase mb-1 block">Data Inicio</label>
                         <input type="text" id="f-abertura" class="input-hardware" placeholder="DD/MM/AAAA HH:MM">
@@ -263,7 +262,6 @@
                 </div>
                 
                 <div class="grid grid-cols-2 gap-3">
-                    <!-- OM com destaque -->
                     <input type="text" id="f-om" class="input-hardware input-om-highlight" placeholder="NUMERO OM *" maxlength="20">
                     <input type="text" id="f-pat" class="input-hardware" placeholder="Patrimonio" maxlength="15">
                 </div>
@@ -383,7 +381,7 @@
                     </div>
                     <div class="bg-white/5 p-3 rounded">
                         <p class="text-[7px] text-gray-500 uppercase">Versao</p>
-                        <p class="text-lg font-black text-gray-400">21.7</p>
+                        <p class="text-lg font-black text-gray-400">21.8</p>
                     </div>
                 </div>
             </div>
@@ -755,7 +753,6 @@
         }
 
         // ==================== CORRECAO PRINCIPAL: Download com Fetch Simples ====================
-        // Removido fetchJsonp. Usando fetch padrão que funcionava na v21.2
         async function importFromCloud() {
             const tecnico = document.getElementById("usuario_nome").value.trim();
             const mes = document.getElementById("filtro_mes").value;
@@ -766,13 +763,11 @@
             showLoader("Baixando Registros...");
             
             try {
-                // MÉTODO SIMPLES E FUNCIONAL (Igual v21.2)
                 const url = `${GOOGLE_URL}?action=getBackup&usuario=${encodeURIComponent(tecnico)}&mes=${mes}`;
                 const response = await fetch(url);
                 const data = await response.json();
                 
                 if(data.success && data.itens) {
-                    // Garantir que valores sejam numeros
                     const formatados = data.itens.map(i => ({
                         ...i,
                         valor: parseFloat(i.valor) || 0,
@@ -780,7 +775,6 @@
                         sincronizado: true
                     }));
                     
-                    // Merge inteligente
                     formatados.forEach(novo => {
                         if(!inventoryData.some(local => String(local.id) === String(novo.id))) {
                             inventoryData.push(novo);
@@ -790,7 +784,6 @@
                     localStorage.setItem("oficina_inventory", JSON.stringify(inventoryData));
                     loadInterface();
                     
-                    // Exibir resumo se existir
                     let msg = `Backup recuperado: ${formatados.length} registros.`;
                     if(data.resumo) {
                         msg += `\n\nFaturamento do Periodo: R$ ${Number(data.resumo.faturamento).toFixed(2)}`;
@@ -854,12 +847,12 @@
             checkIndenizacao();
         }
 
-        // OCR Atualizado para Tesseract v5
+        // ==================== OCR INTELIGENTE (SCANNEAR) ====================
         async function processarOCR(event) {
             const file = event.target.files[0]; 
             if(!file) return;
             
-            showLoader("Processando Imagem...");
+            showLoader("Analisando Documento...");
             
             try {
                 const result = await Tesseract.recognize(file, 'por', {
@@ -871,19 +864,70 @@
                 });
                 
                 const text = result.data.text;
+                let preenchidos = [];
                 
-                // Tentar extrair OM de varias formas
-                let match = text.match(/OM\s*[:]?\s*(\d+)/i);
-                if(!match) match = text.match(/\b(\d{4,})\b/); // Numero grande
-                if(!match) match = text.match(/ORDEM\s*[:]?\s*(\d+)/i);
+                // 1. EXTRAIR OM
+                // Padrão: "OM N° 036394" ou "OM: 12345"
+                const omMatch = text.match(/OM\s*N?[º°]?\s*[:\-]?\s*(\d{4,})/i);
+                if (omMatch && omMatch[1]) {
+                    document.getElementById("f-om").value = omMatch[1];
+                    preenchidos.push("OM: " + omMatch[1]);
+                }
 
-                if(match && match[1]) {
-                    document.getElementById("f-om").value = match[1];
-                    hideLoader();
-                    alert(`OM detectada: ${match[1]}`);
+                // 2. EXTRAIR PATRIMÔNIO
+                // Padrão: "Patrimônio: 3367"
+                const patMatch = text.match(/Patrim[ôo]nio\s*[:\-]?\s*(\d+)/i);
+                if (patMatch && patMatch[1]) {
+                    document.getElementById("f-pat").value = patMatch[1];
+                    preenchidos.push("Patrimonio: " + patMatch[1]);
+                }
+
+                // 3. EXTRAIR DATA
+                // Padrão: "23/03/2026"
+                const dataMatch = text.match(/(\d{2}\/\d{2}\/\d{4})/);
+                if (dataMatch && dataMatch[1]) {
+                    document.getElementById("f-abertura").value = dataMatch[1];
+                    preenchidos.push("Data: " + dataMatch[1]);
+                }
+
+                // 4. EXTRAIR EQUIPAMENTO
+                // Lógica: Procura na tabela de preços qual nome aparece no texto OCR
+                // Isso resolve "MARTELO DEMOLIDOR 11 KG" -> Seleciona "MARTELO 11 KG - 220V"
+                let equipamentoEncontrado = "";
+                const textoUpper = text.toUpperCase();
+
+                for (let i = 0; i < tabelaPrecos.length; i++) {
+                    const eq = tabelaPrecos[i];
+                    // Divide o nome do equipamento em palavras chave (ex: "MARTELO", "11", "KG")
+                    // E verifica se todas aparecem no texto
+                    const palavras = eq.nome.replace(/[-]/g, ' ').split(' ').filter(p => p.length > 1); // Ignora palavras muito curtas
+                    
+                    let encontrouTodas = true;
+                    for(let j=0; j < palavras.length; j++) {
+                        if(!textoUpper.includes(palavras[j])) {
+                            encontrouTodas = false;
+                            break;
+                        }
+                    }
+
+                    if (encontrouTodas) {
+                        equipamentoEncontrado = eq.nome;
+                        break; // Para no primeiro match (assumindo ordem de prioridade)
+                    }
+                }
+
+                if (equipamentoEncontrado) {
+                    document.getElementById("f-maq").value = equipamentoEncontrado;
+                    autoPreencher(); // Preenche Valor e Horas
+                    preenchidos.push("Eq: " + equipamentoEncontrado);
+                }
+
+                hideLoader();
+                
+                if (preenchidos.length > 0) {
+                    alert("DADOS CAPTURADOS:\n\n" + preenchidos.join("\n"));
                 } else {
-                    hideLoader();
-                    alert("Não foi possível detectar o número da OM automaticamente.");
+                    alert("Não foi possível extrair os dados padrão.\nVerifique a imagem ou preencha manualmente.");
                 }
                 
             } catch(e) {
@@ -937,4 +981,4 @@
         }
     </script>
 </body>
-    </html>
+</html>
